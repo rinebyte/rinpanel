@@ -1,3 +1,5 @@
+import { runOnTarget } from "@/lib/shell";
+
 function statTotals(cpuLine: string): { total: number; idle: number } {
   const parts = cpuLine.trim().split(/\s+/).slice(1).map(Number);
   const idle = (parts[3] ?? 0) + (parts[4] ?? 0); // idle + iowait
@@ -46,4 +48,52 @@ export function parseLoadAvg(raw: string) {
 
 export function parseUptime(raw: string): number {
   return Math.floor(Number(raw.trim().split(/\s+/)[0]));
+}
+
+export interface SystemMetrics {
+  cpu: { usagePct: number } | null;
+  memory: { totalMb: number; usedMb: number; availMb: number; usagePct: number } | null;
+  disk: { mount: string; sizeKb: number; usedKb: number; availKb: number; usagePct: number } | null;
+  load: { one: number; five: number; fifteen: number } | null;
+  uptimeSec: number | null;
+  hostname: string | null;
+  errors: string[];
+  ts: number;
+}
+
+function msg(e: unknown): string {
+  return e instanceof Error ? e.message : String(e);
+}
+
+export async function getMetrics(): Promise<SystemMetrics> {
+  const errors: string[] = [];
+  const [cpuR, memR, diskR, loadR, upR, hostR] = await Promise.all([
+    runOnTarget(["bash", "-c", "cat /proc/stat; sleep 0.25; cat /proc/stat"]),
+    runOnTarget(["free", "-m"]),
+    runOnTarget(["df", "-P", "-BK", "/"]),
+    runOnTarget(["cat", "/proc/loadavg"]),
+    runOnTarget(["cat", "/proc/uptime"]),
+    runOnTarget(["hostname"]),
+  ]);
+
+  const safe = <T>(r: { success: boolean; stdout: string; stderr: string }, label: string, fn: (s: string) => T): T | null => {
+    try {
+      if (!r.success) throw new Error(r.stderr || "read failed");
+      return fn(r.stdout);
+    } catch (e) {
+      errors.push(`${label}: ${msg(e)}`);
+      return null;
+    }
+  };
+
+  return {
+    cpu: safe(cpuR, "cpu", parseCpuUsage),
+    memory: safe(memR, "memory", parseMemory),
+    disk: safe(diskR, "disk", parseDisk),
+    load: safe(loadR, "load", parseLoadAvg),
+    uptimeSec: safe(upR, "uptime", parseUptime),
+    hostname: safe(hostR, "hostname", (s) => s.trim()),
+    errors,
+    ts: Date.now(),
+  };
 }
