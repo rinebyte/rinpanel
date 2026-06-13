@@ -1,0 +1,13 @@
+services:
+  server:
+    build: ./docker
+    container_name: panel-server
+    hostname: panel-server
+    ports:
+      - "2222:22"
+      - "8080:80"
+      - "8443:443"
+    volumes:
+      - ./server-data/www:/var/www
+      - ./server-data/nginx:/etc/nginx/sites-available
+    restart: unless-stopped

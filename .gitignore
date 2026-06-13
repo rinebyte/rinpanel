@@ -44,3 +44,4 @@ next-env.d.ts
 panel.db
 panel.db-*
 qa-*.png
+server-data/
