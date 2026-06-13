@@ -8,7 +8,7 @@ import { logout } from "@/app/(dashboard)/logout-action";
 
 const NAV = [
   { href: "/", label: "Dashboard", code: "01", icon: LayoutDashboard, enabled: true },
-  { href: "/domains", label: "Domains", code: "02", icon: Globe, enabled: false },
+  { href: "/domains", label: "Domains", code: "02", icon: Globe, enabled: true },
   { href: "/files", label: "Files", code: "03", icon: FolderOpen, enabled: false },
   { href: "/ssl", label: "SSL", code: "04", icon: ShieldCheck, enabled: false },
 ];
