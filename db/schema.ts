@@ -13,7 +13,10 @@ export const domains = sqliteTable("domains", {
   rootPath: text("root_path").notNull(),
   sslEnabled: integer("ssl_enabled", { mode: "boolean" }).notNull().default(false),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
 });
+
+export type Domain = typeof domains.$inferSelect;
 
 export const activityLogs = sqliteTable("activity_logs", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
