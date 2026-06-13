@@ -32,13 +32,23 @@ export function parseMemory(raw: string) {
 export function parseDisk(raw: string) {
   const lines = raw.trim().split("\n");
   const cols = lines[lines.length - 1].trim().split(/\s+/);
-  return {
+  const result = {
     mount: cols[5],
     sizeKb: parseInt(cols[1], 10),
     usedKb: parseInt(cols[2], 10),
     availKb: parseInt(cols[3], 10),
     usagePct: parseInt(cols[4], 10),
   };
+  if (
+    !result.mount ||
+    !Number.isFinite(result.sizeKb) ||
+    !Number.isFinite(result.usedKb) ||
+    !Number.isFinite(result.availKb) ||
+    !Number.isFinite(result.usagePct)
+  ) {
+    throw new Error("unexpected df output");
+  }
+  return result;
 }
 
 export function parseLoadAvg(raw: string) {

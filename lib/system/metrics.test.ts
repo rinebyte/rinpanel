@@ -42,6 +42,10 @@ describe("parseDisk", () => {
     expect(d.usagePct).toBe(20);
     expect(d.mount).toBe("/");
   });
+
+  it("throws on malformed df output", () => {
+    expect(() => parseDisk("garbage\nnot a valid df line")).toThrow();
+  });
 });
 
 describe("parseLoadAvg", () => {

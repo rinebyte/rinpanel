@@ -15,7 +15,7 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --radius: var(--radius);
+  --color-sidebar: var(--sidebar);
   --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
   --font-display: var(--font-chakra), var(--font-geist), ui-sans-serif, sans-serif;
@@ -38,6 +38,7 @@
   --input: oklch(1 0 0 / 12%);
   --ring: #84cc16;
   --radius: 0.5rem;
+  --sidebar: oklch(0.128 0.006 256);
 }
 
 html { color-scheme: dark; }
