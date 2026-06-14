@@ -12,11 +12,23 @@ import {
 
 export type VhostResult = { ok: true } | { ok: false; error: string };
 
+import { defaultRootPath } from "./render";
+
 const SITES_AVAILABLE = (d: string) => `/etc/nginx/sites-available/${d}.conf`;
 const SITES_ENABLED = (d: string) => `/etc/nginx/sites-enabled/${d}`;
-const WWW_ROOT = (d: string) => `/var/www/${d}`;
-const WEB_ROOT = (d: string) => `/var/www/${d}/public_html`;
-const INDEX_HTML = (d: string) => `${WEB_ROOT(d)}/index.html`;
+const INDEX_HTML = (root: string) => `${root}/index.html`;
+const ERROR_DIR = (root: string) => `${root}/_rinpanel`;
+
+/** Path to clean up when wipeWebroot=true. /var/www/<segments[2]>. */
+function cleanupParent(rootPath: string): string {
+  const segs = rootPath.split("/").filter(Boolean);
+  // /var/www/<name>/...
+  if (segs.length >= 3 && segs[0] === "var" && segs[1] === "www") {
+    return `/var/www/${segs[2]}`;
+  }
+  // Fallback (should not be reachable for validated rootPaths).
+  return rootPath;
+}
 
 async function nginxTest(): Promise<{ ok: boolean; stderr: string }> {
   const r = await runOnTarget(["nginx", "-t"]);
@@ -31,15 +43,19 @@ async function nginxReload(): Promise<void> {
   await new Promise((r) => setTimeout(r, 500));
 }
 
-export async function applyVhost(domain: string): Promise<VhostResult> {
+export async function applyVhost(
+  domain: string,
+  opts: { rootPath?: string } = {},
+): Promise<VhostResult> {
   const row = db.select().from(domains).where(eq(domains.domain, domain)).get();
-  const content = row?.configOverride ?? renderConfig(domain);
+  const root = opts.rootPath ?? row?.rootPath ?? defaultRootPath(domain);
+  const content = row?.configOverride ?? renderConfig(domain, root);
   await writeFileOnTarget(SITES_AVAILABLE(domain), content);
-  await runOnTarget(["mkdir", "-p", WEB_ROOT(domain)]);
-  await runOnTarget(["mkdir", "-p", `${WEB_ROOT(domain)}/_rinpanel`]);
-  await writeFileOnTarget(INDEX_HTML(domain), renderPlaceholderHtml(domain));
-  await writeFileOnTarget(`${WEB_ROOT(domain)}/_rinpanel/404.html`, renderError404Html());
-  await writeFileOnTarget(`${WEB_ROOT(domain)}/_rinpanel/502.html`, renderError502Html());
+  await runOnTarget(["mkdir", "-p", root]);
+  await runOnTarget(["mkdir", "-p", ERROR_DIR(root)]);
+  await writeFileOnTarget(INDEX_HTML(root), renderPlaceholderHtml(domain));
+  await writeFileOnTarget(`${ERROR_DIR(root)}/404.html`, renderError404Html());
+  await writeFileOnTarget(`${ERROR_DIR(root)}/502.html`, renderError502Html());
   await runOnTarget(["ln", "-sf", SITES_AVAILABLE(domain), SITES_ENABLED(domain)]);
 
   const t = await nginxTest();
@@ -57,10 +73,12 @@ export async function removeVhost(
   domain: string,
   opts: { wipeWebroot?: boolean } = {},
 ): Promise<VhostResult> {
+  const row = db.select().from(domains).where(eq(domains.domain, domain)).get();
   await runOnTarget(["rm", "-f", SITES_ENABLED(domain)]);
   await runOnTarget(["rm", "-f", SITES_AVAILABLE(domain)]);
   if (opts.wipeWebroot) {
-    await runOnTarget(["rm", "-rf", WWW_ROOT(domain)]);
+    const root = row?.rootPath ?? defaultRootPath(domain);
+    await runOnTarget(["rm", "-rf", cleanupParent(root)]);
   }
   const t = await nginxTest();
   if (!t.ok) return { ok: false, error: t.stderr };
@@ -72,10 +90,18 @@ export async function renameVhost(oldDomain: string, newDomain: string): Promise
   if (oldDomain === newDomain) return { ok: true };
 
   const oldRow = db.select().from(domains).where(eq(domains.domain, oldDomain)).get();
+  const oldRoot = oldRow?.rootPath ?? defaultRootPath(oldDomain);
+  // Sub the new domain into the rootPath wherever it referenced the old one.
+  const newRoot = oldRoot.split(oldDomain).join(newDomain);
+  const oldParent = cleanupParent(oldRoot);
+  const newParent = cleanupParent(newRoot);
   const newContent = oldRow?.configOverride
     ? oldRow.configOverride.split(oldDomain).join(newDomain)
-    : renderConfig(newDomain);
-  await runOnTarget(["mv", WWW_ROOT(oldDomain), WWW_ROOT(newDomain)]);
+    : renderConfig(newDomain, newRoot);
+
+  if (oldParent !== newParent) {
+    await runOnTarget(["mv", oldParent, newParent]);
+  }
   await writeFileOnTarget(SITES_AVAILABLE(newDomain), newContent);
   await runOnTarget(["ln", "-sf", SITES_AVAILABLE(newDomain), SITES_ENABLED(newDomain)]);
 
@@ -84,7 +110,9 @@ export async function renameVhost(oldDomain: string, newDomain: string): Promise
     // Rollback
     await runOnTarget(["rm", "-f", SITES_ENABLED(newDomain)]);
     await runOnTarget(["rm", "-f", SITES_AVAILABLE(newDomain)]);
-    await runOnTarget(["mv", WWW_ROOT(newDomain), WWW_ROOT(oldDomain)]);
+    if (oldParent !== newParent) {
+      await runOnTarget(["mv", newParent, oldParent]);
+    }
     return { ok: false, error: t.stderr };
   }
 
