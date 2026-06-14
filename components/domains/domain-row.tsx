@@ -4,6 +4,7 @@ import { useRef, useState, useActionState, useEffect } from "react";
 import { Pencil, Trash, Check, X, Lock, ShieldOff } from "lucide-react";
 import { renameDomain, type ActionResult } from "@/app/(dashboard)/domains/actions";
 import type { Domain } from "@/db/schema";
+import type { SslProvider } from "@/lib/nginx/ssl-detect";
 import { DeleteDialog, type DeleteDialogHandle } from "./delete-dialog";
 import { EnableSslDialog, type EnableSslDialogHandle } from "./enable-ssl-dialog";
 import { DisableSslDialog, type DisableSslDialogHandle } from "./disable-ssl-dialog";
@@ -12,9 +13,10 @@ interface Props {
   row: Domain;
   sslEmail: string;
   sslDryRun: boolean;
+  sslProvider: SslProvider;
 }
 
-export function DomainRow({ row, sslEmail, sslDryRun }: Props) {
+export function DomainRow({ row, sslEmail, sslDryRun, sslProvider }: Props) {
   const [editing, setEditing] = useState(false);
   const dialogRef = useRef<DeleteDialogHandle>(null);
   const enableSslRef = useRef<EnableSslDialogHandle>(null);
@@ -131,7 +133,7 @@ export function DomainRow({ row, sslEmail, sslDryRun }: Props) {
       )}
 
       <DeleteDialog ref={dialogRef} id={row.id} domain={row.domain} />
-      <EnableSslDialog ref={enableSslRef} id={row.id} domain={row.domain} email={sslEmail} dryRun={sslDryRun} />
+      <EnableSslDialog ref={enableSslRef} id={row.id} domain={row.domain} email={sslEmail} dryRun={sslDryRun} sslProvider={sslProvider} />
       <DisableSslDialog ref={disableSslRef} id={row.id} domain={row.domain} />
     </li>
   );

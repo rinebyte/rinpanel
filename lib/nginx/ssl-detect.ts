@@ -70,8 +70,8 @@ function detectViaCert(domain: string, timeoutMs: number): Promise<SslProvider> 
     sock.once("secureConnect", () => {
       try {
         const cert = sock!.getPeerCertificate();
-        const issuerO = cert.issuer?.O ?? "";
-        const issuerCN = cert.issuer?.CN ?? "";
+        const issuerO = [cert.issuer?.O ?? ""].flat()[0] ?? "";
+        const issuerCN = [cert.issuer?.CN ?? ""].flat()[0] ?? "";
         const provider = classifyIssuer(issuerO || issuerCN);
         clearTimeout(timer);
         done(provider);

@@ -2,11 +2,12 @@
 
 import { forwardRef, useImperativeHandle, useRef, useActionState, useState } from "react";
 import { enableDomainSsl, type SslActionResult } from "@/app/(dashboard)/domains/actions";
+import type { SslProvider } from "@/lib/nginx/ssl-detect";
 
 export interface EnableSslDialogHandle { open: () => void; close: () => void }
-interface Props { id: string; domain: string; email?: string; dryRun: boolean }
+interface Props { id: string; domain: string; email?: string; dryRun: boolean; sslProvider?: SslProvider }
 
-export const EnableSslDialog = forwardRef<EnableSslDialogHandle, Props>(function EnableSslDialog({ id, domain, email, dryRun }, ref) {
+export const EnableSslDialog = forwardRef<EnableSslDialogHandle, Props>(function EnableSslDialog({ id, domain, email, dryRun, sslProvider }, ref) {
   const r = useRef<HTMLDialogElement>(null);
   const [phase, setPhase] = useState<"idle" | "running" | "done">("idle");
   const [state, formAction] = useActionState<SslActionResult | undefined, FormData>(

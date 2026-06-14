@@ -3,6 +3,8 @@ import { db } from "@/db";
 import { domains } from "@/db/schema";
 import { CreateForm } from "@/components/domains/create-form";
 import { DomainRow } from "@/components/domains/domain-row";
+import { detectSslProvider } from "@/lib/nginx/ssl-detect";
+import type { SslProvider } from "@/lib/nginx/ssl-detect";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +12,18 @@ export default async function DomainsPage() {
   const rows = db.select().from(domains).orderBy(desc(domains.createdAt)).all();
   const sslEmail = process.env.LETS_ENCRYPT_EMAIL ?? "";
   const sslDryRun = process.env.CERTBOT_DRY_RUN !== "false";
+
+  // Detect provider per row. Each cap at 3s; cached for 5min per domain in the module.
+  // Use Promise.allSettled so one slow/failing lookup doesn't block the others.
+  const providers = await Promise.all(
+    rows.map(async (r): Promise<SslProvider> => {
+      try {
+        return await detectSslProvider(r.domain);
+      } catch {
+        return "unknown";
+      }
+    }),
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -37,8 +51,8 @@ export default async function DomainsPage() {
             <span className="eyebrow">actions</span>
           </div>
           <ul className="divide-y divide-white/5">
-            {rows.map((r) => (
-              <DomainRow key={r.id} row={r} sslEmail={sslEmail} sslDryRun={sslDryRun} />
+            {rows.map((r, i) => (
+              <DomainRow key={r.id} row={r} sslEmail={sslEmail} sslDryRun={sslDryRun} sslProvider={providers[i]} />
             ))}
           </ul>
         </div>
