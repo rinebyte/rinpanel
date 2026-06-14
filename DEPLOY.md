@@ -71,6 +71,7 @@ nano .env.local
 
 Fill in:
 - `AUTH_SECRET` — paste output of `openssl rand -base64 32`
+- `AUTH_TRUST_HOST=true` — required when accessing via IP (Quick mode) or behind any reverse proxy. NextAuth v5 refuses to issue session cookies in prod without it; the symptom is `"There was a problem with the server configuration"` after submitting the login form.
 - `ADMIN_USERNAME` — your login (e.g. `admin`)
 - `ADMIN_PASSWORD` — pick something strong (~20+ chars; you'll rarely type it)
 - `USE_DOCKER=false` (already the default — must stay false on the VPS)
@@ -254,6 +255,7 @@ Also worth backing up: `/etc/nginx/sites-available/` and `/etc/letsencrypt/`.
 | `systemctl status rinpanel` shows `failed` | `journalctl -u rinpanel -n 50` — usually `AUTH_SECRET` missing, port already in use, or `npm run build` was never run |
 | Quick mode: `http://IP:8443` times out | UFW didn't open 8443 (`ufw status`), or `HOSTNAME=127.0.0.1` instead of `0.0.0.0` in `.env.local` |
 | Production mode: 502 Bad Gateway | Next process isn't running (`systemctl status rinpanel`), or `proxy_pass` in the nginx vhost points at the wrong port |
+| Login form returns `"There was a problem with the server configuration"` | `AUTH_TRUST_HOST=true` missing from `.env.local`. Add it + `systemctl restart rinpanel`. |
 | Dashboard tiles show `—` / "unreachable" | The metric commands failed. Run them manually: `free -m`, `df -P -BK /`, `cat /proc/stat`. They MUST work on the VPS. |
 | `Domains` add returns nginx error | The error banner shows `nginx -t` stderr verbatim. Usually a typo in `server_name` or a missing dir. |
 | certbot fails for a hosted domain | DNS doesn't resolve to this VPS yet (`dig +short <domain>` from elsewhere), or port 80 is blocked. |
