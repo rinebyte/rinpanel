@@ -3,14 +3,15 @@
 import { useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Globe, FolderOpen, ShieldCheck, LogOut } from "lucide-react";
+import { LayoutDashboard, Globe, FolderOpen, LogOut } from "lucide-react";
 import { logout } from "@/app/(dashboard)/logout-action";
 
+// SSL isn't a separate page — it's a per-vhost action on /domains rows
+// (Lock icon → enable dialog, ShieldOff → disable dialog).
 const NAV = [
   { href: "/", label: "Dashboard", code: "01", icon: LayoutDashboard, enabled: true },
   { href: "/domains", label: "Domains", code: "02", icon: Globe, enabled: true },
   { href: "/files", label: "Files", code: "03", icon: FolderOpen, enabled: true },
-  { href: "/ssl", label: "SSL", code: "04", icon: ShieldCheck, enabled: false },
 ];
 
 export function Sidebar({ username }: { username: string }) {
