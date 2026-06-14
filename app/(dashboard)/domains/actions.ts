@@ -6,8 +6,9 @@ import { eq } from "drizzle-orm";
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { domains } from "@/db/schema";
-import { validateDomain } from "@/lib/nginx/validate";
+import { validateDomain, validateRootPath } from "@/lib/nginx/validate";
 import { applyVhost, removeVhost, renameVhost, readVhostConfig, updateVhostConfig } from "@/lib/nginx/vhost";
+import { defaultRootPath } from "@/lib/nginx/render";
 import { logActivity } from "@/lib/system/activity";
 import { enableSsl, disableSsl } from "@/lib/nginx/ssl";
 
@@ -28,17 +29,23 @@ export async function createDomain(_prev: ActionResult | undefined, formData: Fo
   const v = validateDomain(raw);
   if (!v.ok) return { ok: false, error: v.reason };
 
+  // Optional custom rootPath. Empty = default (/var/www/<domain>/public_html).
+  const rootRaw = String(formData.get("rootPath") ?? "").trim();
+  const finalRoot = rootRaw || defaultRootPath(raw);
+  const rp = validateRootPath(finalRoot);
+  if (!rp.ok) return { ok: false, error: rp.reason };
+
   const existing = db.select().from(domains).where(eq(domains.domain, raw)).get();
   if (existing) return { ok: false, error: "Nama domain sudah terdaftar." };
 
-  const r = await applyVhost(raw);
+  const r = await applyVhost(raw, { rootPath: finalRoot });
   if (!r.ok) return { ok: false, error: r.error };
 
   db.insert(domains).values({
     domain: raw,
-    rootPath: `/var/www/${raw}/public_html`,
+    rootPath: finalRoot,
   }).run();
-  logActivity("domain_create", raw);
+  logActivity("domain_create", `${raw} → ${finalRoot}`);
 
   revalidatePath("/domains");
   return { ok: true };

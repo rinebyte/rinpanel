@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef, useEffect } from "react";
+import { useActionState, useRef, useEffect, useState } from "react";
 import { createDomain, type ActionResult } from "@/app/(dashboard)/domains/actions";
 
 export function CreateForm() {
@@ -9,11 +9,21 @@ export function CreateForm() {
     undefined,
   );
   const inputRef = useRef<HTMLInputElement>(null);
+  const [domain, setDomain] = useState("");
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [rootPath, setRootPath] = useState("");
 
   // Reset on success
   useEffect(() => {
-    if (state?.ok) inputRef.current?.form?.reset();
+    if (state?.ok) {
+      inputRef.current?.form?.reset();
+      setDomain("");
+      setRootPath("");
+      setShowAdvanced(false);
+    }
   }, [state]);
+
+  const defaultRoot = domain ? `/var/www/${domain}/public_html` : "/var/www/<domain>/public_html";
 
   return (
     <form action={formAction} className="glass corner-ticks relative flex flex-col gap-3 rounded-xl p-5">
@@ -32,15 +42,12 @@ export function CreateForm() {
             <input
               ref={inputRef}
               name="domain"
+              value={domain}
               placeholder="example.com"
               autoComplete="off"
               spellCheck={false}
               required
-              onChange={(e) => {
-                // display-only auto-lowercase
-                const v = e.currentTarget.value;
-                if (v !== v.toLowerCase()) e.currentTarget.value = v.toLowerCase();
-              }}
+              onChange={(e) => setDomain(e.currentTarget.value.toLowerCase())}
               className="h-11 w-full rounded-md border border-white/[0.08] bg-black/40 pr-3 pl-8 font-mono text-sm text-white outline-none transition placeholder:text-zinc-700 focus:border-lime-500/50 focus:bg-black/60 focus:ring-2 focus:ring-lime-500/20"
             />
           </div>
@@ -61,6 +68,37 @@ export function CreateForm() {
           )}
         </button>
       </div>
+
+      <button
+        type="button"
+        onClick={() => setShowAdvanced((s) => !s)}
+        className="self-start font-mono text-[0.65rem] tracking-wider text-zinc-500 uppercase hover:text-lime-400"
+      >
+        {showAdvanced ? "▾ lanjutan" : "▸ lanjutan (lokasi folder)"}
+      </button>
+
+      {showAdvanced && (
+        <label className="flex flex-col gap-1.5">
+          <span className="eyebrow">lokasi folder situs (opsional)</span>
+          <div className="relative">
+            <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 font-mono text-sm text-lime-500/50">
+              ▸
+            </span>
+            <input
+              name="rootPath"
+              value={rootPath}
+              placeholder={defaultRoot}
+              autoComplete="off"
+              spellCheck={false}
+              onChange={(e) => setRootPath(e.currentTarget.value)}
+              className="h-11 w-full rounded-md border border-white/[0.08] bg-black/40 pr-3 pl-8 font-mono text-sm text-white outline-none transition placeholder:text-zinc-700 focus:border-lime-500/50 focus:bg-black/60 focus:ring-2 focus:ring-lime-500/20"
+            />
+          </div>
+          <p className="font-mono text-[0.65rem] text-zinc-500">
+            Kosongkan untuk menggunakan lokasi standar. Harus berada di dalam <code className="text-zinc-400">/var/www/</code>.
+          </p>
+        </label>
+      )}
 
       {state && !state.ok && state.error && (
         <div className="rounded-md border border-red-500/30 bg-red-500/10 p-3">

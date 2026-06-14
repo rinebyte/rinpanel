@@ -39,3 +39,44 @@ export function validateDomain(input: unknown): ValidationResult {
   }
   return { ok: true };
 }
+
+const PATH_SEGMENT = /^[A-Za-z0-9._-]+$/;
+
+/**
+ * Validate a vhost root path. Must be an absolute path under /var/www/.
+ * No `..`, no empty/dot segments, no leading-dot segments (hidden), no shell
+ * metacharacters, no whitespace. Returns the canonical normalized form on ok.
+ */
+export function validateRootPath(input: unknown): ValidationResult {
+  if (typeof input !== "string" || input.length === 0) {
+    return { ok: false, reason: "lokasi folder wajib diisi" };
+  }
+  if (input.length > 4096) {
+    return { ok: false, reason: "lokasi folder terlalu panjang" };
+  }
+  if (!input.startsWith("/var/www/")) {
+    return { ok: false, reason: "lokasi folder harus berada di dalam /var/www/" };
+  }
+  const stripped = input.replace(/\/+$/, ""); // strip trailing slash
+  const segments = stripped.split("/").slice(1); // drop leading empty
+  // segments: ["var", "www", "<domain>", ...]
+  if (segments.length < 3) {
+    return { ok: false, reason: "lokasi folder harus berisi minimal /var/www/<nama>/" };
+  }
+  for (const seg of segments) {
+    if (seg === "") return { ok: false, reason: "lokasi folder tidak boleh memiliki segmen kosong" };
+    if (seg === "." || seg === "..") {
+      return { ok: false, reason: "lokasi folder tidak boleh berisi '.' atau '..'" };
+    }
+    if (seg.length > 255) {
+      return { ok: false, reason: "nama folder terlalu panjang (maks 255 karakter)" };
+    }
+    if (seg.startsWith(".")) {
+      return { ok: false, reason: "nama folder tidak boleh diawali tanda titik" };
+    }
+    if (!PATH_SEGMENT.test(seg)) {
+      return { ok: false, reason: "karakter folder tidak valid (gunakan huruf, angka, '-', '_', '.')" };
+    }
+  }
+  return { ok: true };
+}
