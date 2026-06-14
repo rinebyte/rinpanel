@@ -53,8 +53,11 @@ export async function uploadFiles(formData: FormData): Promise<ActionResult> {
     const relPath = cwd ? `${cwd}/${file.name}` : file.name;
     const v = validatePath(domain, relPath);
     if (!v.ok) { errors.push(`${file.name}: ${v.reason}`); continue; }
-    // Bytes-as-Latin1 string preserves the raw byte sequence end-to-end.
-    const content = Buffer.from(await file.arrayBuffer()).toString("binary");
+    // Pass raw bytes through as a Buffer so binary content (images, video,
+    // fonts, etc.) survives the round-trip. Stringifying via toString("binary")
+    // then writing back as UTF-8 inflates non-ASCII bytes into multi-byte
+    // sequences and corrupts the file.
+    const content = new Uint8Array(await file.arrayBuffer());
     const w = await writeFile(domain, relPath, content);
     if (!w.ok) errors.push(`${file.name}: ${w.error}`);
   }
