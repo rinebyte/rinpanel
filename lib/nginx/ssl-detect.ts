@@ -32,12 +32,29 @@ async function withTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promise<T
   }
 }
 
+/**
+ * Walk up the domain to find the authoritative zone's nameservers.
+ * Subdomains like `tes.nikki.moe` usually have NO NS records themselves —
+ * we need to query the parent zone (`nikki.moe`) to find the actual NS.
+ * Tries the input first, then strips one label at a time until we hit the
+ * registrable domain (stops when ≤ 2 labels remain).
+ */
+async function resolveZoneNs(domain: string, timeoutMs: number): Promise<string[] | null> {
+  const labels = domain.split(".");
+  for (let i = 0; i < labels.length - 1; i++) {
+    const candidate = labels.slice(i).join(".");
+    const ns = await withTimeout(
+      resolveNs(candidate).catch(() => null),
+      timeoutMs,
+      null,
+    );
+    if (ns && ns.length > 0) return ns;
+  }
+  return null;
+}
+
 async function detectViaNs(domain: string, timeoutMs: number): Promise<"cloudflare" | "other" | "none"> {
-  const result = await withTimeout(
-    resolveNs(domain).catch(() => null),
-    timeoutMs,
-    null,
-  );
+  const result = await resolveZoneNs(domain, timeoutMs);
   if (!result || result.length === 0) return "none";
   return isCloudflareNs(result) ? "cloudflare" : "other";
 }
