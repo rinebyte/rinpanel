@@ -19,5 +19,10 @@ RUN mkdir -p /etc/nginx/sites-available /etc/nginx/sites-enabled
 COPY nginx-default.conf /etc/nginx/sites-available/default
 RUN ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
 
+# Themed page served when a request hits an unbound (unknown) domain.
+# Stored outside /var/www so the docker-compose volume mount doesn't mask it.
+RUN mkdir -p /usr/share/rinpanel
+COPY unbound.html /usr/share/rinpanel/unbound.html
+
 EXPOSE 22 80 443
 CMD service ssh start && nginx -g 'daemon off;'

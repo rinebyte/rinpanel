@@ -113,6 +113,39 @@ npm run db:seed        # create admin user from .env.local
 
 You should see `Created admin user: <ADMIN_USERNAME>`. Re-running `db:seed` after editing `ADMIN_PASSWORD` rotates it idempotently.
 
+### 4a. Install themed "domain belum terdaftar" page (optional)
+
+When a request arrives at the VPS with a `Host` header that doesn't match any configured vhost, nginx returns the default. rinpanel ships a themed page for this. Install it once:
+
+```bash
+sudo mkdir -p /usr/share/rinpanel
+sudo cp /opt/rinpanel/docker/unbound.html /usr/share/rinpanel/unbound.html
+
+# Replace nginx's default vhost with one that serves this page
+sudo tee /etc/nginx/sites-available/default > /dev/null <<'EOF'
+server {
+    listen 80 default_server;
+    server_name _;
+    root /usr/share/rinpanel;
+
+    server_tokens off;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+
+    location / {
+        try_files /unbound.html =404;
+    }
+}
+EOF
+
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+If the source template ever changes, regenerate the static HTML with:
+```bash
+npm run default-pages:gen   # writes docker/unbound.html
+```
+
 ---
 
 ## 5. systemd service + firewall

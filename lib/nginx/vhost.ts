@@ -3,7 +3,12 @@ import { db } from "@/db";
 import { domains } from "@/db/schema";
 import { runOnTarget } from "@/lib/shell";
 import { writeFileOnTarget } from "@/lib/system/target-fs";
-import { renderConfig, renderPlaceholderHtml } from "./render";
+import {
+  renderConfig,
+  renderError404Html,
+  renderError502Html,
+  renderPlaceholderHtml,
+} from "./render";
 
 export type VhostResult = { ok: true } | { ok: false; error: string };
 
@@ -31,7 +36,10 @@ export async function applyVhost(domain: string): Promise<VhostResult> {
   const content = row?.configOverride ?? renderConfig(domain);
   await writeFileOnTarget(SITES_AVAILABLE(domain), content);
   await runOnTarget(["mkdir", "-p", WEB_ROOT(domain)]);
+  await runOnTarget(["mkdir", "-p", `${WEB_ROOT(domain)}/_rinpanel`]);
   await writeFileOnTarget(INDEX_HTML(domain), renderPlaceholderHtml(domain));
+  await writeFileOnTarget(`${WEB_ROOT(domain)}/_rinpanel/404.html`, renderError404Html());
+  await writeFileOnTarget(`${WEB_ROOT(domain)}/_rinpanel/502.html`, renderError502Html());
   await runOnTarget(["ln", "-sf", SITES_AVAILABLE(domain), SITES_ENABLED(domain)]);
 
   const t = await nginxTest();
