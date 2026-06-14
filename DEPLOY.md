@@ -58,6 +58,8 @@ Fill in:
 - `ADMIN_USERNAME` — your login (e.g. `admin`)
 - `ADMIN_PASSWORD` — pick something strong (~16+ chars)
 - `USE_DOCKER=false` (already the default in the template — must stay false on the VPS)
+- `LETS_ENCRYPT_EMAIL` — admin email for Let's Encrypt account / expiry notices.
+- `CERTBOT_DRY_RUN=false` — required for real cert issuance.
 
 Lock down the file:
 
