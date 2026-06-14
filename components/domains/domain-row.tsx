@@ -1,13 +1,14 @@
 "use client";
 
 import { useRef, useState, useActionState, useEffect } from "react";
-import { Pencil, Trash, Check, X, Lock, ShieldOff } from "lucide-react";
+import { FileCog, Pencil, Trash, Check, X, Lock, ShieldOff } from "lucide-react";
 import { renameDomain, type ActionResult } from "@/app/(dashboard)/domains/actions";
 import type { Domain } from "@/db/schema";
 import type { SslProvider } from "@/lib/nginx/ssl-detect";
 import { DeleteDialog, type DeleteDialogHandle } from "./delete-dialog";
 import { EnableSslDialog, type EnableSslDialogHandle } from "./enable-ssl-dialog";
 import { DisableSslDialog, type DisableSslDialogHandle } from "./disable-ssl-dialog";
+import { ConfigEditorDialog, type ConfigEditorDialogHandle } from "./config-editor-dialog";
 
 function sslChip(provider: SslProvider, sslEnabled: boolean) {
   // Priority: actual DB state (sslEnabled, set by our certbot integration) overrides detection
@@ -38,6 +39,7 @@ export function DomainRow({ row, sslEmail, sslDryRun, sslProvider }: Props) {
   const dialogRef = useRef<DeleteDialogHandle>(null);
   const enableSslRef = useRef<EnableSslDialogHandle>(null);
   const disableSslRef = useRef<DisableSslDialogHandle>(null);
+  const configRef = useRef<ConfigEditorDialogHandle>(null);
   const [renameState, renameAction, renamePending] = useActionState<ActionResult | undefined, FormData>(
     renameDomain,
     undefined,
@@ -136,6 +138,14 @@ export function DomainRow({ row, sslEmail, sslDryRun, sslProvider }: Props) {
           )}
           <button
             type="button"
+            onClick={() => configRef.current?.open()}
+            aria-label="Edit nginx config"
+            className="grid size-9 place-items-center rounded-md text-zinc-500 hover:border-sky-500/30 hover:bg-sky-500/10 hover:text-sky-300"
+          >
+            <FileCog className="size-4" />
+          </button>
+          <button
+            type="button"
             onClick={() => setEditing(true)}
             aria-label="Rename domain"
             className="grid size-9 place-items-center rounded-md border border-transparent text-zinc-500 hover:border-white/10 hover:bg-white/[0.04] hover:text-zinc-200"
@@ -156,6 +166,7 @@ export function DomainRow({ row, sslEmail, sslDryRun, sslProvider }: Props) {
       <DeleteDialog ref={dialogRef} id={row.id} domain={row.domain} />
       <EnableSslDialog ref={enableSslRef} id={row.id} domain={row.domain} email={sslEmail} dryRun={sslDryRun} sslProvider={sslProvider} />
       <DisableSslDialog ref={disableSslRef} id={row.id} domain={row.domain} />
+      <ConfigEditorDialog ref={configRef} id={row.id} domain={row.domain} />
     </li>
   );
 }
