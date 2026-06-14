@@ -61,7 +61,11 @@ export async function readFile(
   return { ok: true, value: { content, truncated, isBinary } };
 }
 
-export async function writeFile(domain: string, relPath: string, content: string): Promise<FsResult> {
+export async function writeFile(
+  domain: string,
+  relPath: string,
+  content: string | Uint8Array,
+): Promise<FsResult> {
   let abs: string;
   try { abs = rejectOnInvalidPath(domain, relPath); } catch (e) { return { ok: false, error: (e as Error).message }; }
   await writeFileOnTarget(abs, content);

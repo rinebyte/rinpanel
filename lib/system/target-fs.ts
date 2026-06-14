@@ -30,7 +30,10 @@ function dockerCp(src: string, dst: string): Promise<void> {
  * lands at the literal `targetPath` inside the container, with no
  * shell interpolation of the content.
  */
-export async function writeFileOnTarget(targetPath: string, content: string): Promise<void> {
+export async function writeFileOnTarget(
+  targetPath: string,
+  content: string | Uint8Array,
+): Promise<void> {
   if (useDocker()) {
     const tmp = join(tmpdir(), `rinpanel-${randomBytes(8).toString("hex")}`);
     await writeFile(tmp, content);
