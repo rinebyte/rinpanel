@@ -36,7 +36,7 @@ export async function listDir(domain: string, relPath: string): Promise<FsResult
     .map((line) => {
       const [t, size, mtime, ...nameParts] = line.split("\t");
       return {
-        type: t === "f" ? "file" : t === "d" ? "dir" : "other",
+        type: (t === "f" ? "file" : t === "d" ? "dir" : "other") as Entry["type"],
         size: parseInt(size, 10) || 0,
         mtime: Math.floor(parseFloat(mtime) || 0),
         name: nameParts.join("\t"),
