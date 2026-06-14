@@ -1,0 +1,32 @@
+# /etc/nginx/sites-available/rinpanel.conf
+#
+# Reverse-proxy vhost for the rinpanel control panel itself.
+# After symlinking + `nginx -s reload`, run:
+#   certbot --nginx -d panel.<your-domain>
+# certbot will auto-rewrite this file with a 443 server block + 80→443
+# redirect; do not edit the rewritten file by hand afterwards.
+
+server {
+    listen 80;
+    server_name panel.example.com;   # <-- change to your panel domain
+
+    # ACME challenge files certbot writes here during issuance/renewal:
+    location /.well-known/acme-challenge/ {
+        root /var/www/html;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_read_timeout 60s;
+    }
+
+    access_log /var/log/nginx/rinpanel.access.log;
+    error_log  /var/log/nginx/rinpanel.error.log;
+}

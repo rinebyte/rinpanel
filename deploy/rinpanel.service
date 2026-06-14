@@ -1,0 +1,22 @@
+[Unit]
+Description=rinpanel — self-hosted hosting control panel
+Documentation=https://github.com/rinebyte/rinpanel
+After=network-online.target nginx.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/rinpanel
+EnvironmentFile=/opt/rinpanel/.env.local
+ExecStart=/usr/bin/npm start
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# Generous limits; rinpanel is light but shells out a lot during vhost ops.
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target
