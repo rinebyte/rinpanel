@@ -7,7 +7,7 @@ import { auth } from "@/auth";
 import { db } from "@/db";
 import { domains } from "@/db/schema";
 import { validateDomain } from "@/lib/nginx/validate";
-import { applyVhost, removeVhost, renameVhost } from "@/lib/nginx/vhost";
+import { applyVhost, removeVhost, renameVhost, readVhostConfig, updateVhostConfig } from "@/lib/nginx/vhost";
 import { logActivity } from "@/lib/system/activity";
 import { enableSsl, disableSsl } from "@/lib/nginx/ssl";
 
@@ -141,4 +141,76 @@ export async function disableDomainSsl(
 
   revalidatePath("/domains");
   return { ok: true, output: r.output };
+}
+
+export interface ConfigActionResult {
+  ok: boolean;
+  error?: string;
+}
+
+export async function readVhostConfigContent(domain: string): Promise<{ ok: boolean; content?: string; error?: string }> {
+  await requireSession();
+  const v = validateDomain(domain);
+  if (!v.ok) return { ok: false, error: v.reason };
+  const r = await readVhostConfig(domain);
+  if (!r.ok) return { ok: false, error: r.error };
+  return { ok: true, content: r.content };
+}
+
+export async function updateVhostConfigAction(
+  _prev: ConfigActionResult | undefined,
+  formData: FormData,
+): Promise<ConfigActionResult> {
+  await requireSession();
+  const id = String(formData.get("id") ?? "");
+  const content = String(formData.get("content") ?? "");
+
+  const row = db.select().from(domains).where(eq(domains.id, id)).get();
+  if (!row) return { ok: false, error: "domain not found" };
+
+  // Persist the override BEFORE writing the file, so that updateVhostConfig's
+  // internal callers (and applyVhost on any concurrent op) see the new content.
+  const now = new Date();
+  db.update(domains)
+    .set({ configOverride: content, configUpdatedAt: now, updatedAt: now })
+    .where(eq(domains.id, id))
+    .run();
+
+  const r = await updateVhostConfig(row.domain, content);
+  if (!r.ok) {
+    // Rollback DB to whatever was there before
+    db.update(domains)
+      .set({ configOverride: row.configOverride, configUpdatedAt: row.configUpdatedAt, updatedAt: row.updatedAt })
+      .where(eq(domains.id, id))
+      .run();
+    return { ok: false, error: r.error };
+  }
+
+  logActivity("domain_config_edit", `${row.domain} (${content.length} bytes)`);
+  revalidatePath("/domains");
+  return { ok: true };
+}
+
+export async function resetVhostConfigAction(formData: FormData): Promise<ConfigActionResult> {
+  await requireSession();
+  const id = String(formData.get("id") ?? "");
+  const row = db.select().from(domains).where(eq(domains.id, id)).get();
+  if (!row) return { ok: false, error: "domain not found" };
+
+  const now = new Date();
+  db.update(domains)
+    .set({ configOverride: null, configUpdatedAt: null, updatedAt: now })
+    .where(eq(domains.id, id))
+    .run();
+
+  // applyVhost reads the DB row inline; with override now null it writes renderConfig output.
+  const r = await applyVhost(row.domain);
+  if (!r.ok) {
+    // Catastrophic — leave override null since renderConfig is the safe default
+    return { ok: false, error: r.error };
+  }
+
+  logActivity("domain_config_reset", row.domain);
+  revalidatePath("/domains");
+  return { ok: true };
 }
