@@ -45,3 +45,4 @@ panel.db
 panel.db-*
 qa-*.png
 server-data/
+.update-status
