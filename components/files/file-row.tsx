@@ -2,7 +2,10 @@
 
 import { useRef } from "react";
 import Link from "next/link";
-import { Folder, File as FileIcon, FileText, FileImage, FileCode, Pencil, Trash, Download, FileEdit } from "lucide-react";
+import {
+  Folder, File as FileIcon, FileText, FileImage, FileCode, FileVideo, FileAudio,
+  Pencil, Trash, Download, FileEdit,
+} from "lucide-react";
 import type { Entry } from "@/lib/fs/files";
 
 // Inlined from @/lib/fs/files to avoid pulling server-only Node modules into
@@ -11,20 +14,33 @@ const TEXT_EXT = new Set([
   "html", "htm", "css", "js", "mjs", "json", "txt", "md", "xml", "svg",
   "conf", "ini", "yaml", "yml", "csv",
 ]);
-function isLikelyText(name: string): boolean {
-  const ext = name.split(".").pop()?.toLowerCase() ?? "";
-  return TEXT_EXT.has(ext);
+const IMAGE_EXT = new Set(["png", "jpg", "jpeg", "gif", "webp", "svg", "avif", "bmp", "ico"]);
+const VIDEO_EXT = new Set(["mp4", "webm", "mov", "mkv", "ogv", "m4v"]);
+const AUDIO_EXT = new Set(["mp3", "wav", "ogg", "oga", "m4a", "flac", "opus"]);
+
+function ext(name: string): string { return name.split(".").pop()?.toLowerCase() ?? ""; }
+function isLikelyText(name: string): boolean { return TEXT_EXT.has(ext(name)); }
+function mediaKind(name: string): "image" | "video" | "audio" | null {
+  const e = ext(name);
+  if (IMAGE_EXT.has(e)) return "image";
+  if (VIDEO_EXT.has(e)) return "video";
+  if (AUDIO_EXT.has(e)) return "audio";
+  return null;
 }
+
 import { DeleteDialog, type DeleteDialogHandle } from "./delete-dialog";
 import { RenameDialog, type RenameDialogHandle } from "./rename-dialog";
 import { EditorDialog, type EditorDialogHandle } from "./editor-dialog";
+import { MediaPreviewDialog, type MediaPreviewDialogHandle } from "./media-preview-dialog";
 
 function iconFor(entry: Entry) {
   if (entry.type === "dir") return Folder;
-  const ext = entry.name.split(".").pop()?.toLowerCase() ?? "";
-  if (["png", "jpg", "jpeg", "gif", "webp", "svg"].includes(ext)) return FileImage;
-  if (["html", "css", "js", "json", "ts", "tsx", "md", "xml"].includes(ext)) return FileCode;
-  if (["txt", "log"].includes(ext)) return FileText;
+  const e = ext(entry.name);
+  if (IMAGE_EXT.has(e)) return FileImage;
+  if (VIDEO_EXT.has(e)) return FileVideo;
+  if (AUDIO_EXT.has(e)) return FileAudio;
+  if (["html", "css", "js", "json", "ts", "tsx", "md", "xml"].includes(e)) return FileCode;
+  if (["txt", "log"].includes(e)) return FileText;
   return FileIcon;
 }
 
@@ -42,19 +58,48 @@ export function FileRow({ domain, cwd, entry }: { domain: string; cwd: string; e
   const deleteRef = useRef<DeleteDialogHandle>(null);
   const renameRef = useRef<RenameDialogHandle>(null);
   const editorRef = useRef<EditorDialogHandle>(null);
+  const previewRef = useRef<MediaPreviewDialogHandle>(null);
 
   const Icon = iconFor(entry);
   const relPath = cwd ? `${cwd}/${entry.name}` : entry.name;
   const dirHref = entry.type === "dir" ? `/files/${domain}/${relPath}` : null;
   const editable = entry.type === "file" && isLikelyText(entry.name) && entry.size <= 100 * 1024;
-  const downloadHref = `/api/files/${domain}/${relPath}`;
+  const downloadHref = `/api/files/${domain}/${encodeURI(relPath)}`;
+  const media = entry.type === "file" ? mediaKind(entry.name) : null;
+  const isImage = media === "image";
+  const openPreview = () => previewRef.current?.open();
 
   return (
     <li className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-4 px-5 py-3 hover:bg-white/[0.02]">
       <div className="flex min-w-0 items-center gap-3">
-        <Icon className="size-4 shrink-0 text-zinc-500" />
+        {isImage ? (
+          <button
+            type="button"
+            onClick={openPreview}
+            aria-label="Pratinjau"
+            className="block size-8 shrink-0 overflow-hidden rounded border border-white/[0.06] bg-black/40"
+          >
+            <img
+              src={downloadHref}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              className="size-full object-cover"
+            />
+          </button>
+        ) : (
+          <Icon className="size-4 shrink-0 text-zinc-500" />
+        )}
         {dirHref ? (
           <Link href={dirHref} className="truncate font-mono text-sm text-zinc-100 hover:text-lime-300">{entry.name}</Link>
+        ) : media ? (
+          <button
+            type="button"
+            onClick={openPreview}
+            className="truncate text-left font-mono text-sm text-zinc-100 hover:text-lime-300"
+          >
+            {entry.name}
+          </button>
         ) : (
           <span className="truncate font-mono text-sm text-zinc-100">{entry.name}</span>
         )}
@@ -69,7 +114,7 @@ export function FileRow({ domain, cwd, entry }: { domain: string; cwd: string; e
           <button
             type="button"
             onClick={() => editorRef.current?.open()}
-            aria-label="Edit"
+            aria-label="Sunting"
             className="grid size-9 place-items-center rounded-md text-zinc-500 hover:bg-white/[0.04] hover:text-zinc-200"
           >
             <FileEdit className="size-4" />
@@ -79,7 +124,7 @@ export function FileRow({ domain, cwd, entry }: { domain: string; cwd: string; e
           <a
             href={downloadHref}
             download
-            aria-label="Download"
+            aria-label="Unduh"
             className="grid size-9 place-items-center rounded-md text-zinc-500 hover:bg-white/[0.04] hover:text-zinc-200"
           >
             <Download className="size-4" />
@@ -88,7 +133,7 @@ export function FileRow({ domain, cwd, entry }: { domain: string; cwd: string; e
         <button
           type="button"
           onClick={() => renameRef.current?.open()}
-          aria-label="Rename"
+          aria-label="Ganti nama"
           className="grid size-9 place-items-center rounded-md text-zinc-500 hover:bg-white/[0.04] hover:text-zinc-200"
         >
           <Pencil className="size-4" />
@@ -96,7 +141,7 @@ export function FileRow({ domain, cwd, entry }: { domain: string; cwd: string; e
         <button
           type="button"
           onClick={() => deleteRef.current?.open()}
-          aria-label="Delete"
+          aria-label="Hapus"
           className="grid size-9 place-items-center rounded-md text-zinc-500 hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-300"
         >
           <Trash className="size-4" />
@@ -106,6 +151,9 @@ export function FileRow({ domain, cwd, entry }: { domain: string; cwd: string; e
       <DeleteDialog ref={deleteRef} domain={domain} relPath={relPath} isDir={entry.type === "dir"} name={entry.name} />
       <RenameDialog ref={renameRef} domain={domain} relPath={relPath} currentName={entry.name} />
       {editable && <EditorDialog ref={editorRef} domain={domain} relPath={relPath} name={entry.name} />}
+      {media && (
+        <MediaPreviewDialog ref={previewRef} src={downloadHref} kind={media} name={entry.name} />
+      )}
     </li>
   );
 }
