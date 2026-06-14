@@ -14,6 +14,8 @@
     "default-pages:gen": "tsx -e \"import('./lib/nginx/render.ts').then(m => process.stdout.write(m.renderUnboundHtml()))\" > docker/unbound.html"
   },
   "dependencies": {
+    "@types/archiver": "^8.0.0",
+    "archiver": "^8.0.0",
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.10.0",
     "clsx": "^2.1.1",
