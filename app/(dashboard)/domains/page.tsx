@@ -8,6 +8,8 @@ export const dynamic = "force-dynamic";
 
 export default async function DomainsPage() {
   const rows = db.select().from(domains).orderBy(desc(domains.createdAt)).all();
+  const sslEmail = process.env.LETS_ENCRYPT_EMAIL ?? "";
+  const sslDryRun = process.env.CERTBOT_DRY_RUN !== "false";
 
   return (
     <div className="flex flex-col gap-6">
@@ -36,7 +38,7 @@ export default async function DomainsPage() {
           </div>
           <ul className="divide-y divide-white/5">
             {rows.map((r) => (
-              <DomainRow key={r.id} row={r} />
+              <DomainRow key={r.id} row={r} sslEmail={sslEmail} sslDryRun={sslDryRun} />
             ))}
           </ul>
         </div>
