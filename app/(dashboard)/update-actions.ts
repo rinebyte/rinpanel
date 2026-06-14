@@ -87,37 +87,49 @@ export async function checkForUpdates(): Promise<UpdateInfo> {
 
 export interface UpdateStartResult { ok: boolean; error?: string }
 
+function run(cmd: string, args: string[]): Promise<{ code: number; stderr: string }> {
+  return new Promise((resolve) => {
+    const p = spawn(cmd, args, { stdio: ["ignore", "pipe", "pipe"] });
+    let stderr = "";
+    p.stdout?.on("data", () => {});
+    p.stderr?.on("data", (c) => { stderr += c.toString(); });
+    p.on("error", (err) => resolve({ code: -1, stderr: err.message }));
+    p.on("close", (code) => resolve({ code: code ?? -1, stderr: stderr.trim() }));
+  });
+}
+
 export async function startUpdate(): Promise<UpdateStartResult> {
   await requireSession();
 
   const dir = installDir();
   const script = `${dir}/scripts/self-update.sh`;
+  const unit = "rinpanel-update.service";
+
+  // If a previous run left the unit in "failed" or "activating" state, systemd
+  // will refuse a new --unit= dispatch. Clear it (ignore errors — most of the
+  // time there's nothing to clear).
+  await run("systemctl", ["reset-failed", unit]);
 
   // Detach via systemd-run so the script lives in its own transient unit and
-  // survives the `systemctl restart rinpanel` at the very end.
-  const p = spawn(
-    "systemd-run",
-    [
-      "--collect",
-      "--no-block",
-      "--unit=rinpanel-update",
-      `--setenv=INSTALL_DIR=${dir}`,
-      "bash",
-      script,
-    ],
-    { detached: true, stdio: "ignore" },
-  );
+  // survives the `systemctl restart rinpanel` at the very end. With --no-block,
+  // systemd-run exits as soon as the unit is dispatched; if dispatch fails
+  // (binary missing, name collision, dbus down), it exits non-zero with a
+  // useful error on stderr.
+  const r = await run("systemd-run", [
+    "--collect",
+    "--no-block",
+    `--unit=${unit}`,
+    `--setenv=INSTALL_DIR=${dir}`,
+    "bash",
+    script,
+  ]);
 
-  return await new Promise<UpdateStartResult>((resolve) => {
-    p.on("error", (err) => {
-      resolve({ ok: false, error: err.message || "systemd-run tidak tersedia." });
-    });
-    // Give the child a moment to fork; if it errors immediately we still hit
-    // the handler above. Otherwise treat as kicked off successfully.
-    setTimeout(() => {
-      p.unref();
-      logActivity("panel_update_start", "self-update kicked off");
-      resolve({ ok: true });
-    }, 250);
-  });
+  if (r.code !== 0) {
+    const msg = r.stderr.slice(0, 300) || `systemd-run keluar dengan kode ${r.code}`;
+    logActivity("panel_update_start", `gagal: ${msg}`);
+    return { ok: false, error: msg };
+  }
+
+  logActivity("panel_update_start", "self-update kicked off");
+  return { ok: true };
 }
