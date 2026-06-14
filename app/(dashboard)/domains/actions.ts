@@ -9,6 +9,7 @@ import { domains } from "@/db/schema";
 import { validateDomain } from "@/lib/nginx/validate";
 import { applyVhost, removeVhost, renameVhost } from "@/lib/nginx/vhost";
 import { logActivity } from "@/lib/system/activity";
+import { enableSsl, disableSsl } from "@/lib/nginx/ssl";
 
 async function requireSession(): Promise<void> {
   const s = await auth();
@@ -87,4 +88,57 @@ export async function renameDomain(_prev: ActionResult | undefined, formData: Fo
 
   revalidatePath("/domains");
   return { ok: true };
+}
+
+export interface SslActionResult {
+  ok: boolean;
+  error?: string;
+  output?: string;
+  dryRun?: boolean;
+}
+
+export async function enableDomainSsl(
+  _prev: SslActionResult | undefined,
+  formData: FormData,
+): Promise<SslActionResult> {
+  await requireSession();
+  const id = String(formData.get("id") ?? "");
+  const row = db.select().from(domains).where(eq(domains.id, id)).get();
+  if (!row) return { ok: false, error: "domain not found" };
+
+  const r = await enableSsl(row.domain);
+  if (!r.ok) return { ok: false, error: r.error, output: r.output };
+
+  // Skip DB flip on dry-run — dry-run isn't a real enable
+  if (!r.dryRun) {
+    db.update(domains)
+      .set({ sslEnabled: true, updatedAt: new Date() })
+      .where(eq(domains.id, id))
+      .run();
+    logActivity("domain_ssl_enable", row.domain);
+  }
+  revalidatePath("/domains");
+  return { ok: true, output: r.output, dryRun: r.dryRun };
+}
+
+export async function disableDomainSsl(
+  _prev: SslActionResult | undefined,
+  formData: FormData,
+): Promise<SslActionResult> {
+  await requireSession();
+  const id = String(formData.get("id") ?? "");
+  const row = db.select().from(domains).where(eq(domains.id, id)).get();
+  if (!row) return { ok: false, error: "domain not found" };
+
+  const r = await disableSsl(row.domain);
+  if (!r.ok) return { ok: false, error: r.error, output: r.output };
+
+  db.update(domains)
+    .set({ sslEnabled: false, updatedAt: new Date() })
+    .where(eq(domains.id, id))
+    .run();
+  logActivity("domain_ssl_disable", row.domain);
+
+  revalidatePath("/domains");
+  return { ok: true, output: r.output };
 }
