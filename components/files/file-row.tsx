@@ -64,7 +64,8 @@ export function FileRow({ domain, cwd, entry }: { domain: string; cwd: string; e
   const relPath = cwd ? `${cwd}/${entry.name}` : entry.name;
   const dirHref = entry.type === "dir" ? `/files/${domain}/${relPath}` : null;
   const editable = entry.type === "file" && isLikelyText(entry.name) && entry.size <= 100 * 1024;
-  const downloadHref = `/api/files/${domain}/${encodeURI(relPath)}`;
+  const previewHref = `/api/files/${domain}/${encodeURI(relPath)}`;
+  const downloadHref = `${previewHref}?dl=1`;
   const media = entry.type === "file" ? mediaKind(entry.name) : null;
   const isImage = media === "image";
   const openPreview = () => previewRef.current?.open();
@@ -80,7 +81,7 @@ export function FileRow({ domain, cwd, entry }: { domain: string; cwd: string; e
             className="block size-8 shrink-0 overflow-hidden rounded border border-white/[0.06] bg-black/40"
           >
             <img
-              src={downloadHref}
+              src={previewHref}
               alt=""
               loading="lazy"
               decoding="async"
@@ -152,7 +153,7 @@ export function FileRow({ domain, cwd, entry }: { domain: string; cwd: string; e
       <RenameDialog ref={renameRef} domain={domain} relPath={relPath} currentName={entry.name} />
       {editable && <EditorDialog ref={editorRef} domain={domain} relPath={relPath} name={entry.name} />}
       {media && (
-        <MediaPreviewDialog ref={previewRef} src={downloadHref} kind={media} name={entry.name} />
+        <MediaPreviewDialog ref={previewRef} src={previewHref} kind={media} name={entry.name} />
       )}
     </li>
   );
