@@ -6,6 +6,36 @@ server {
     root /var/www/${domain}/public_html;
     index index.html;
 
+    # Hide nginx version from response headers and error pages.
+    server_tokens off;
+
+    # Security response headers ('always' so error responses get them too).
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "geolocation=(), microphone=(), camera=(), payment=()" always;
+    # Uncomment + tune once your site is CSP-ready:
+    # add_header Content-Security-Policy "default-src 'self'" always;
+
+    # Cap request body size (raise if you accept larger uploads).
+    client_max_body_size 10m;
+
+    # Block dotfiles (.git, .env, .htaccess, .ssh, ...).
+    location ~ /\\. {
+        deny all;
+        access_log off;
+        log_not_found off;
+        return 404;
+    }
+
+    # Block common sensitive file extensions.
+    location ~* \\.(env|log|sql|sqlite|db|bak|backup|swp|swo)$ {
+        deny all;
+        access_log off;
+        log_not_found off;
+        return 404;
+    }
+
     location / {
         try_files $uri $uri/ =404;
     }
