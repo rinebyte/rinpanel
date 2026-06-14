@@ -125,4 +125,79 @@ export async function readFileContent(domain: string, relPath: string): Promise<
   return { ok: true, content: r.value.content };
 }
 
+export async function createFile(
+  _prev: ActionResult | undefined,
+  formData: FormData,
+): Promise<ActionResult> {
+  await requireSession();
+  const domain = String(formData.get("domain") ?? "");
+  const cwd = String(formData.get("cwd") ?? "");
+  const name = String(formData.get("name") ?? "").trim();
+  try { ensureDomainExists(domain); } catch (e) { return { ok: false, error: (e as Error).message }; }
+  const target = cwd ? `${cwd}/${name}` : name;
+  const v = validatePath(domain, target);
+  if (!v.ok) return { ok: false, error: v.reason };
+  const w = await writeFile(domain, target, "");
+  if (!w.ok) return { ok: false, error: w.error };
+  logActivity("file_create", `${domain}:${target}`);
+  revalidatePath(`/files/${domain}`, "layout");
+  return { ok: true };
+}
+
+export async function deleteEntries(formData: FormData): Promise<ActionResult> {
+  await requireSession();
+  const domain = String(formData.get("domain") ?? "");
+  const paths = formData.getAll("paths").map(String).filter(Boolean);
+  if (paths.length === 0) return { ok: false, error: "Tidak ada berkas yang dipilih." };
+  try { ensureDomainExists(domain); } catch (e) { return { ok: false, error: (e as Error).message }; }
+
+  const errors: string[] = [];
+  let okCount = 0;
+  for (const p of paths) {
+    const v = validatePath(domain, p);
+    if (!v.ok) { errors.push(`${p}: ${v.reason}`); continue; }
+    const r = await remove(domain, p, { recursive: true });
+    if (!r.ok) errors.push(`${p}: ${r.error}`);
+    else okCount++;
+  }
+  logActivity("file_bulk_delete", `${domain}: ${okCount} dihapus${errors.length ? `, ${errors.length} gagal` : ""}`);
+  revalidatePath(`/files/${domain}`, "layout");
+  if (errors.length) return { ok: false, error: errors.join("\n") };
+  return { ok: true };
+}
+
+export async function moveEntries(formData: FormData): Promise<ActionResult> {
+  await requireSession();
+  const domain = String(formData.get("domain") ?? "");
+  const dest = String(formData.get("dest") ?? "");
+  const paths = formData.getAll("paths").map(String).filter(Boolean);
+  if (paths.length === 0) return { ok: false, error: "Tidak ada berkas yang dipilih." };
+  try { ensureDomainExists(domain); } catch (e) { return { ok: false, error: (e as Error).message }; }
+
+  // Destination must validate (empty string = root, that's fine).
+  const dv = validatePath(domain, dest);
+  if (!dv.ok) return { ok: false, error: `Tujuan: ${dv.reason}` };
+
+  const errors: string[] = [];
+  let okCount = 0;
+  for (const p of paths) {
+    const v = validatePath(domain, p);
+    if (!v.ok) { errors.push(`${p}: ${v.reason}`); continue; }
+    const name = p.split("/").pop() ?? "";
+    if (!name) { errors.push(`${p}: nama tidak valid`); continue; }
+    const newRel = dest ? `${dest}/${name}` : name;
+    // No-op if same path
+    if (newRel === p) continue;
+    const nv = validatePath(domain, newRel);
+    if (!nv.ok) { errors.push(`${p}: tujuan tidak valid (${nv.reason})`); continue; }
+    const r = await rename(domain, p, newRel);
+    if (!r.ok) errors.push(`${p}: ${r.error}`);
+    else okCount++;
+  }
+  logActivity("file_bulk_move", `${domain}: ${okCount} dipindah ke "${dest || "/"}"${errors.length ? `, ${errors.length} gagal` : ""}`);
+  revalidatePath(`/files/${domain}`, "layout");
+  if (errors.length) return { ok: false, error: errors.join("\n") };
+  return { ok: true };
+}
+
 export { listDir };

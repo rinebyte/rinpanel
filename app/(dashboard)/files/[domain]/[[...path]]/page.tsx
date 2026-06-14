@@ -4,7 +4,7 @@ import { db } from "@/db";
 import { domains } from "@/db/schema";
 import { listDir } from "@/lib/fs/files";
 import { Breadcrumb } from "@/components/files/breadcrumb";
-import { MkdirForm } from "@/components/files/mkdir-form";
+import { NewEntryForm } from "@/components/files/new-entry-form";
 import { UploadZone } from "@/components/files/upload-zone";
 import { FileList } from "@/components/files/file-list";
 
@@ -31,7 +31,7 @@ export default async function FileBrowserPage({
 
       <div className="flex flex-col gap-3 md:flex-row md:items-stretch">
         <UploadZone domain={domain} cwd={relPath} />
-        <MkdirForm domain={domain} cwd={relPath} />
+        <NewEntryForm domain={domain} cwd={relPath} />
       </div>
 
       {r.ok ? (

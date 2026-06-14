@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import {
   Folder, File as FileIcon, FileText, FileImage, FileCode, FileVideo, FileAudio,
@@ -8,8 +8,6 @@ import {
 } from "lucide-react";
 import type { Entry } from "@/lib/fs/files";
 
-// Inlined from @/lib/fs/files to avoid pulling server-only Node modules into
-// this client component (the barrel imports node:child_process via runOnTarget).
 const TEXT_EXT = new Set([
   "html", "htm", "css", "js", "mjs", "json", "txt", "md", "xml", "svg",
   "conf", "ini", "yaml", "yml", "csv",
@@ -54,11 +52,23 @@ function formatMtime(unix: number): string {
   return new Date(unix * 1000).toISOString().slice(0, 16).replace("T", " ");
 }
 
-export function FileRow({ domain, cwd, entry }: { domain: string; cwd: string; entry: Entry }) {
+interface FileRowProps {
+  domain: string;
+  cwd: string;
+  entry: Entry;
+  selected: boolean;
+  onToggle: () => void;
+  onDragStart: (e: React.DragEvent) => void;
+  /** Set only when entry.type === "dir" — this row is a drop target. */
+  onDropDir?: (e: React.DragEvent) => void;
+}
+
+export function FileRow({ domain, cwd, entry, selected, onToggle, onDragStart, onDropDir }: FileRowProps) {
   const deleteRef = useRef<DeleteDialogHandle>(null);
   const renameRef = useRef<RenameDialogHandle>(null);
   const editorRef = useRef<EditorDialogHandle>(null);
   const previewRef = useRef<MediaPreviewDialogHandle>(null);
+  const [hoverDrop, setHoverDrop] = useState(false);
 
   const Icon = iconFor(entry);
   const relPath = cwd ? `${cwd}/${entry.name}` : entry.name;
@@ -70,8 +80,41 @@ export function FileRow({ domain, cwd, entry }: { domain: string; cwd: string; e
   const isImage = media === "image";
   const openPreview = () => previewRef.current?.open();
 
+  const dropProps = onDropDir
+    ? {
+        onDragOver: (e: React.DragEvent) => {
+          if (e.dataTransfer.types.includes("application/x-rinpanel-paths")) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+            setHoverDrop(true);
+          }
+        },
+        onDragLeave: () => setHoverDrop(false),
+        onDrop: (e: React.DragEvent) => {
+          setHoverDrop(false);
+          onDropDir(e);
+        },
+      }
+    : {};
+
   return (
-    <li className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-4 px-5 py-3 hover:bg-white/[0.02]">
+    <li
+      draggable
+      onDragStart={onDragStart}
+      {...dropProps}
+      className={`grid grid-cols-[auto_1fr_auto_auto_auto] items-center gap-4 px-5 py-3 transition ${
+        hoverDrop ? "bg-lime-500/10 ring-1 ring-inset ring-lime-500/40" : "hover:bg-white/[0.02]"
+      } ${selected ? "bg-lime-500/[0.04]" : ""}`}
+    >
+      <input
+        type="checkbox"
+        checked={selected}
+        onChange={onToggle}
+        aria-label={`Pilih ${entry.name}`}
+        className="size-4 accent-lime-500"
+        onClick={(e) => e.stopPropagation()}
+      />
+
       <div className="flex min-w-0 items-center gap-3">
         {isImage ? (
           <button
