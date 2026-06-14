@@ -12,6 +12,8 @@ export const domains = sqliteTable("domains", {
   domain: text("domain").notNull().unique(),
   rootPath: text("root_path").notNull(),
   sslEnabled: integer("ssl_enabled", { mode: "boolean" }).notNull().default(false),
+  configOverride: text("config_override"),                // nullable; null = use renderConfig template
+  configUpdatedAt: integer("config_updated_at", { mode: "timestamp" }),  // nullable
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
 });
