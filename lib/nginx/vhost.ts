@@ -1,3 +1,6 @@
+import { eq } from "drizzle-orm";
+import { db } from "@/db";
+import { domains } from "@/db/schema";
 import { runOnTarget } from "@/lib/shell";
 import { writeFileOnTarget } from "@/lib/system/target-fs";
 import { renderConfig, renderPlaceholderHtml } from "./render";
@@ -24,7 +27,9 @@ async function nginxReload(): Promise<void> {
 }
 
 export async function applyVhost(domain: string): Promise<VhostResult> {
-  await writeFileOnTarget(SITES_AVAILABLE(domain), renderConfig(domain));
+  const row = db.select().from(domains).where(eq(domains.domain, domain)).get();
+  const content = row?.configOverride ?? renderConfig(domain);
+  await writeFileOnTarget(SITES_AVAILABLE(domain), content);
   await runOnTarget(["mkdir", "-p", WEB_ROOT(domain)]);
   await writeFileOnTarget(INDEX_HTML(domain), renderPlaceholderHtml(domain));
   await runOnTarget(["ln", "-sf", SITES_AVAILABLE(domain), SITES_ENABLED(domain)]);
@@ -58,8 +63,12 @@ export async function removeVhost(
 export async function renameVhost(oldDomain: string, newDomain: string): Promise<VhostResult> {
   if (oldDomain === newDomain) return { ok: true };
 
+  const oldRow = db.select().from(domains).where(eq(domains.domain, oldDomain)).get();
+  const newContent = oldRow?.configOverride
+    ? oldRow.configOverride.split(oldDomain).join(newDomain)
+    : renderConfig(newDomain);
   await runOnTarget(["mv", WWW_ROOT(oldDomain), WWW_ROOT(newDomain)]);
-  await writeFileOnTarget(SITES_AVAILABLE(newDomain), renderConfig(newDomain));
+  await writeFileOnTarget(SITES_AVAILABLE(newDomain), newContent);
   await runOnTarget(["ln", "-sf", SITES_AVAILABLE(newDomain), SITES_ENABLED(newDomain)]);
 
   const t = await nginxTest();
@@ -73,6 +82,37 @@ export async function renameVhost(oldDomain: string, newDomain: string): Promise
 
   await runOnTarget(["rm", "-f", SITES_ENABLED(oldDomain)]);
   await runOnTarget(["rm", "-f", SITES_AVAILABLE(oldDomain)]);
+  await nginxReload();
+  return { ok: true };
+}
+
+export async function readVhostConfig(domain: string): Promise<{ ok: true; content: string } | { ok: false; error: string }> {
+  const r = await runOnTarget(["cat", SITES_AVAILABLE(domain)]);
+  if (!r.success) return { ok: false, error: r.stderr || "read failed" };
+  return { ok: true, content: r.stdout };
+}
+
+export async function updateVhostConfig(domain: string, content: string): Promise<VhostResult> {
+  if (content.length === 0) return { ok: false, error: "config cannot be empty" };
+  if (content.length > 50_000) return { ok: false, error: "config too large (max 50KB)" };
+
+  // Read current content for rollback
+  const cur = await readVhostConfig(domain);
+  if (!cur.ok) return { ok: false, error: `cannot read current config: ${cur.error}` };
+  const previous = cur.content;
+
+  // Write new content
+  await writeFileOnTarget(SITES_AVAILABLE(domain), content);
+
+  // Validate via nginx -t
+  const t = await runOnTarget(["nginx", "-t"]);
+  if (!t.success) {
+    // Rollback
+    await writeFileOnTarget(SITES_AVAILABLE(domain), previous);
+    return { ok: false, error: t.stderr.trim() };
+  }
+
+  // Reload
   await nginxReload();
   return { ok: true };
 }
