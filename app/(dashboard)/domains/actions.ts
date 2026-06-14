@@ -29,7 +29,7 @@ export async function createDomain(_prev: ActionResult | undefined, formData: Fo
   if (!v.ok) return { ok: false, error: v.reason };
 
   const existing = db.select().from(domains).where(eq(domains.domain, raw)).get();
-  if (existing) return { ok: false, error: "domain already exists" };
+  if (existing) return { ok: false, error: "Nama domain sudah terdaftar." };
 
   const r = await applyVhost(raw);
   if (!r.ok) return { ok: false, error: r.error };
@@ -50,7 +50,7 @@ export async function deleteDomain(formData: FormData): Promise<ActionResult> {
   const wipe = formData.get("wipeWebroot") === "on";
 
   const row = db.select().from(domains).where(eq(domains.id, id)).get();
-  if (!row) return { ok: false, error: "domain not found" };
+  if (!row) return { ok: false, error: "Data domain tidak ditemukan." };
 
   const r = await removeVhost(row.domain, { wipeWebroot: wipe });
   if (!r.ok) return { ok: false, error: r.error };
@@ -71,11 +71,11 @@ export async function renameDomain(_prev: ActionResult | undefined, formData: Fo
   if (!v.ok) return { ok: false, error: v.reason };
 
   const row = db.select().from(domains).where(eq(domains.id, id)).get();
-  if (!row) return { ok: false, error: "domain not found" };
+  if (!row) return { ok: false, error: "Data domain tidak ditemukan." };
   if (row.domain === next) return { ok: true };
 
   const dup = db.select().from(domains).where(eq(domains.domain, next)).get();
-  if (dup) return { ok: false, error: "domain already exists" };
+  if (dup) return { ok: false, error: "Nama domain sudah terdaftar." };
 
   const r = await renameVhost(row.domain, next);
   if (!r.ok) return { ok: false, error: r.error };
@@ -104,7 +104,7 @@ export async function enableDomainSsl(
   await requireSession();
   const id = String(formData.get("id") ?? "");
   const row = db.select().from(domains).where(eq(domains.id, id)).get();
-  if (!row) return { ok: false, error: "domain not found" };
+  if (!row) return { ok: false, error: "Data domain tidak ditemukan." };
 
   const r = await enableSsl(row.domain);
   if (!r.ok) return { ok: false, error: r.error, output: r.output };
@@ -128,7 +128,7 @@ export async function disableDomainSsl(
   await requireSession();
   const id = String(formData.get("id") ?? "");
   const row = db.select().from(domains).where(eq(domains.id, id)).get();
-  if (!row) return { ok: false, error: "domain not found" };
+  if (!row) return { ok: false, error: "Data domain tidak ditemukan." };
 
   const r = await disableSsl(row.domain);
   if (!r.ok) return { ok: false, error: r.error, output: r.output };
@@ -166,7 +166,7 @@ export async function updateVhostConfigAction(
   const content = String(formData.get("content") ?? "");
 
   const row = db.select().from(domains).where(eq(domains.id, id)).get();
-  if (!row) return { ok: false, error: "domain not found" };
+  if (!row) return { ok: false, error: "Data domain tidak ditemukan." };
 
   // Persist the override BEFORE writing the file, so that updateVhostConfig's
   // internal callers (and applyVhost on any concurrent op) see the new content.
@@ -195,7 +195,7 @@ export async function resetVhostConfigAction(formData: FormData): Promise<Config
   await requireSession();
   const id = String(formData.get("id") ?? "");
   const row = db.select().from(domains).where(eq(domains.id, id)).get();
-  if (!row) return { ok: false, error: "domain not found" };
+  if (!row) return { ok: false, error: "Data domain tidak ditemukan." };
 
   const now = new Date();
   db.update(domains)

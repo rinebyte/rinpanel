@@ -32,7 +32,7 @@ export function LiveDashboard() {
 
       {unreachable && (
         <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 font-mono text-sm text-red-300">
-          ▸ Linux box unreachable — is the panel-server container running?
+          Server tidak dapat dijangkau saat ini. Silakan periksa kembali kondisi server Anda.
         </div>
       )}
 

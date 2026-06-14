@@ -27,11 +27,11 @@ function adminEmail(): string | null {
 
 export async function enableSsl(domain: string): Promise<SslResult> {
   const email = adminEmail();
-  if (!email) return { ok: false, error: "LETS_ENCRYPT_EMAIL must be set in .env.local", output: "" };
+  if (!email) return { ok: false, error: "Konfigurasi alamat email belum lengkap. Silakan hubungi administrator.", output: "" };
 
   const confCheck = await runOnTarget(["test", "-f", `/etc/nginx/sites-available/${domain}.conf`]);
   if (!confCheck.success) {
-    return { ok: false, error: `vhost not provisioned for ${domain}`, output: "" };
+    return { ok: false, error: `Domain ini belum siap untuk pemasangan sertifikat.`, output: "" };
   }
 
   const dryRun = useDryRun();

@@ -17,7 +17,7 @@ async function requireSession() {
 
 function ensureDomainExists(domain: string) {
   const row = db.select().from(domains).where(eq(domains.domain, domain)).get();
-  if (!row) throw new Error("domain not found");
+  if (!row) throw new Error("Data domain tidak ditemukan.");
   return row;
 }
 
@@ -46,7 +46,7 @@ export async function uploadFiles(formData: FormData): Promise<ActionResult> {
   try { ensureDomainExists(domain); } catch (e) { return { ok: false, error: (e as Error).message }; }
 
   const files = formData.getAll("files").filter((f): f is File => f instanceof File);
-  if (files.length === 0) return { ok: false, error: "no files supplied" };
+  if (files.length === 0) return { ok: false, error: "Tidak ada berkas yang dipilih." };
 
   const errors: string[] = [];
   for (const file of files) {
@@ -104,7 +104,7 @@ export async function saveFile(_prev: ActionResult | undefined, formData: FormDa
   try { ensureDomainExists(domain); } catch (e) { return { ok: false, error: (e as Error).message }; }
   const v = validatePath(domain, relPath);
   if (!v.ok) return { ok: false, error: v.reason };
-  if (content.length > 100 * 1024) return { ok: false, error: "file too large (max 100 KB inline)" };
+  if (content.length > 100 * 1024) return { ok: false, error: "Berkas terlalu besar untuk disunting (maksimal 100 KB)." };
   const r = await writeFile(domain, relPath, content);
   if (!r.ok) return { ok: false, error: r.error };
   logActivity("file_edit", `${domain}:${relPath}`);
@@ -118,7 +118,7 @@ export async function readFileContent(domain: string, relPath: string): Promise<
   if (!v.ok) return { ok: false, error: v.reason };
   const r = await readFile(domain, relPath);
   if (!r.ok) return { ok: false, error: r.error };
-  if (r.value.isBinary) return { ok: false, error: "binary file — not editable" };
+  if (r.value.isBinary) return { ok: false, error: "Berkas ini tidak dapat disunting." };
   return { ok: true, content: r.value.content };
 }
 

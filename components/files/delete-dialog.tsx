@@ -20,10 +20,10 @@ export const DeleteDialog = forwardRef<DeleteDialogHandle, Props>(function Delet
         <input type="hidden" name="path" value={relPath} />
 
         <div>
-          <p className="eyebrow">{isDir ? "folder · delete" : "file · delete"}</p>
-          <h2 className="font-display mt-1 text-xl font-bold tracking-wide text-white">delete {isDir ? "folder" : "file"}?</h2>
+          <p className="eyebrow">{isDir ? "folder · hapus" : "berkas · hapus"}</p>
+          <h2 className="font-display mt-1 text-xl font-bold tracking-wide text-white">{isDir ? "Hapus folder?" : "Hapus berkas?"}</h2>
           <p className="mt-2 font-mono text-sm text-zinc-400">
-            <span className="text-zinc-500">name · </span>
+            <span className="text-zinc-500">Nama · </span>
             <span className="text-zinc-200">{name}</span>
           </p>
         </div>
@@ -32,8 +32,8 @@ export const DeleteDialog = forwardRef<DeleteDialogHandle, Props>(function Delet
           <label className="flex cursor-pointer items-start gap-3 rounded-md border border-white/10 bg-black/30 p-3">
             <input type="checkbox" name="recursive" required className="mt-0.5 size-4 shrink-0 accent-red-500" />
             <span className="flex flex-col gap-1">
-              <span className="font-mono text-xs text-zinc-200">Include all contents</span>
-              <span className="font-mono text-[0.65rem] text-zinc-500">delete recursively, no undo</span>
+              <span className="font-mono text-xs text-zinc-200">Hapus seluruh isi</span>
+              <span className="font-mono text-[0.65rem] text-zinc-500">Seluruh isi folder akan terhapus permanen.</span>
             </span>
           </label>
         )}
@@ -41,11 +41,11 @@ export const DeleteDialog = forwardRef<DeleteDialogHandle, Props>(function Delet
         <div className="flex gap-3">
           <button type="button" onClick={() => r.current?.close()}
             className="h-10 flex-1 rounded-md border border-white/10 bg-white/[0.03] font-mono text-xs tracking-wide uppercase text-zinc-300 hover:border-white/20 hover:text-white">
-            Cancel
+            Batal
           </button>
           <button type="submit"
             className="h-10 flex-1 rounded-md border border-red-500/40 bg-red-500/10 font-mono text-xs font-semibold tracking-wide uppercase text-red-300 hover:border-red-500/60 hover:bg-red-500/20">
-            Delete
+            Hapus
           </button>
         </div>
       </form>

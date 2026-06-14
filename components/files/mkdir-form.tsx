@@ -13,7 +13,7 @@ export function MkdirForm({ domain, cwd }: { domain: string; cwd: string }) {
     <form action={formAction} className="glass corner-ticks relative flex flex-col gap-2 rounded-xl p-5 md:max-w-xs">
       <input type="hidden" name="domain" value={domain} />
       <input type="hidden" name="cwd" value={cwd} />
-      <span className="eyebrow">new folder</span>
+      <span className="eyebrow">folder baru</span>
       <div className="flex gap-2">
         <div className="relative flex-1">
           <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 font-mono text-sm text-lime-500/50">▸</span>
@@ -21,7 +21,7 @@ export function MkdirForm({ domain, cwd }: { domain: string; cwd: string }) {
             ref={inputRef}
             name="name"
             required
-            placeholder="folder-name"
+            placeholder="nama-folder"
             className="h-10 w-full rounded-md border border-white/[0.08] bg-black/40 pl-8 pr-3 font-mono text-sm text-white outline-none focus:border-lime-500/50 focus:ring-2 focus:ring-lime-500/20"
           />
         </div>
@@ -35,7 +35,7 @@ export function MkdirForm({ domain, cwd }: { domain: string; cwd: string }) {
         </button>
       </div>
       {state && !state.ok && state.error && (
-        <p className="font-mono text-[0.7rem] text-red-300">▸ {state.error}</p>
+        <p className="font-mono text-[0.7rem] text-red-300">Gagal: {state.error}</p>
       )}
     </form>
   );

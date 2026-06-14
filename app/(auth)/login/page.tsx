@@ -25,7 +25,7 @@ export default function LoginPage() {
               rinpanel
             </h1>
             <p className="font-mono text-xs text-zinc-500">
-              single-operator console · self-hosted
+              Panel kontrol hosting pribadi
             </p>
           </div>
 
@@ -34,7 +34,7 @@ export default function LoginPage() {
             <span className="h-px flex-1 bg-white/10" />
             <span className="flex items-center gap-1.5 font-mono text-[0.6rem] tracking-wider text-emerald-400 uppercase">
               <span className="size-1 rounded-full bg-emerald-400 animate-glow-pulse" />
-              secure channel
+              koneksi aman
             </span>
             <span className="h-px flex-1 bg-white/10" />
           </div>
@@ -42,7 +42,7 @@ export default function LoginPage() {
           {/* Fields */}
           <div className="flex flex-col gap-4">
             <label className="flex flex-col gap-1.5">
-              <span className="eyebrow">username</span>
+              <span className="eyebrow">nama pengguna</span>
               <div className="relative">
                 <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 font-mono text-sm text-lime-500/40">
                   ▸
@@ -59,7 +59,7 @@ export default function LoginPage() {
             </label>
 
             <label className="flex flex-col gap-1.5">
-              <span className="eyebrow">password</span>
+              <span className="eyebrow">kata sandi</span>
               <div className="relative">
                 <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 font-mono text-sm text-lime-500/40">
                   ▸
@@ -91,21 +91,18 @@ export default function LoginPage() {
             {pending ? (
               <>
                 <span className="animate-blink">[ ·· ]</span>
-                <span>authenticating</span>
+                <span>memproses</span>
               </>
             ) : (
-              <>
-                <span>authenticate</span>
-                <span className="text-primary-foreground/60">↵</span>
-              </>
+              <span>Masuk</span>
             )}
           </button>
 
           {/* Footer telemetry */}
           <div className="flex items-center justify-between border-t border-white/5 pt-4">
-            <span className="eyebrow text-zinc-700">session · jwt</span>
+            <span className="eyebrow text-zinc-700">sesi · aman</span>
             <span className="font-mono text-[0.6rem] tracking-wider text-zinc-700 uppercase">
-              rate-limited
+              perlindungan aktif
             </span>
           </div>
         </div>
