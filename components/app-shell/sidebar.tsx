@@ -14,14 +14,32 @@ const NAV = [
   { href: "/files", label: "Files", code: "03", icon: FolderOpen, enabled: true },
 ];
 
-export function Sidebar({ username }: { username: string }) {
+function formatLastLogin(d: Date | null): string {
+  if (!d) return "—";
+  const now = new Date();
+  const sameDay = d.toDateString() === now.toDateString();
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  const wasYesterday = d.toDateString() === yesterday.toDateString();
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  if (sameDay) return `Hari ini · ${hh}:${mm}`;
+  if (wasYesterday) return `Kemarin · ${hh}:${mm}`;
+  const MONTHS = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+  return `${d.getDate()} ${MONTHS[d.getMonth()]} · ${hh}:${mm}`;
+}
+
+export function Sidebar({ lastLoginAt }: { lastLoginAt: Date | null }) {
   const pathname = usePathname();
   const dialogRef = useRef<HTMLDialogElement>(null);
   return (
     <aside className="bg-sidebar/80 sticky top-0 flex h-screen w-16 shrink-0 flex-col gap-6 border-r border-white/10 px-2 py-5 backdrop-blur-xl md:w-64 md:px-4">
-      <div className="flex items-center gap-3 px-1">
-        <img src="/logo.svg" alt="rinpanel" className="accent-glow size-8 rounded-md" />
-        <span className="font-display hidden text-lg font-bold tracking-wide text-white md:block">rinpanel</span>
+      <div className="hidden items-baseline gap-2 px-1 md:flex">
+        <span className="font-display text-lg font-bold tracking-wide text-white">rinpanel</span>
+        <span className="font-mono text-[0.6rem] tracking-wider text-zinc-600 uppercase">console</span>
+      </div>
+      <div className="flex justify-center md:hidden">
+        <span className="font-display text-xl font-bold tracking-wide text-white">R</span>
       </div>
 
       <nav className="flex flex-1 flex-col gap-1">
@@ -53,11 +71,11 @@ export function Sidebar({ username }: { username: string }) {
         })}
       </nav>
 
-      {/* USER + LOGOUT footer */}
+      {/* LAST LOGIN + LOGOUT footer */}
       <div className="flex flex-col gap-3 border-t border-white/10 pt-4">
         <div className="hidden min-w-0 flex-col px-1 md:flex">
-          <span className="eyebrow">pengguna</span>
-          <span className="truncate font-mono text-sm text-zinc-200">{username}</span>
+          <span className="eyebrow">login terakhir</span>
+          <span className="truncate font-mono text-sm text-zinc-200">{formatLastLogin(lastLoginAt)}</span>
         </div>
 
         <button

@@ -20,6 +20,27 @@ describe("renderConfig", () => {
     expect(c).toContain("root /var/www/foo.bar.co/public_html;");
     expect(c).not.toContain("example.com");
   });
+
+  it("includes hardened security defaults", () => {
+    const c = renderConfig("example.com");
+    expect(c).toContain("server_tokens off;");
+    expect(c).toContain('add_header X-Content-Type-Options "nosniff"');
+    expect(c).toContain('add_header X-Frame-Options "SAMEORIGIN"');
+    expect(c).toContain('add_header Referrer-Policy "strict-origin-when-cross-origin"');
+    expect(c).toContain("add_header Permissions-Policy");
+    expect(c).toContain("client_max_body_size 10m;");
+  });
+
+  it("blocks dotfiles and sensitive extensions", () => {
+    const c = renderConfig("example.com");
+    expect(c).toContain("location ~ /\\.");
+    expect(c).toMatch(/location ~\* \\\.\(env\|log\|sql\|sqlite\|db\|bak\|backup\|swp\|swo\)\$/);
+    // Both blocks should deny + 404
+    const denyCount = (c.match(/deny all;/g) ?? []).length;
+    const return404Count = (c.match(/return 404;/g) ?? []).length;
+    expect(denyCount).toBeGreaterThanOrEqual(2);
+    expect(return404Count).toBeGreaterThanOrEqual(2);
+  });
 });
 
 describe("renderPlaceholderHtml", () => {
