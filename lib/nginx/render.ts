@@ -20,6 +20,14 @@ server {
     # Cap request body size (raise if you accept larger uploads).
     client_max_body_size 10m;
 
+    # Custom themed error pages.
+    error_page 404 /_rinpanel/404.html;
+    error_page 502 503 504 /_rinpanel/502.html;
+    location ^~ /_rinpanel/ {
+        internal;
+        root /var/www/${domain}/public_html;
+    }
+
     # Block dotfiles (.git, .env, .htaccess, .ssh, ...).
     location ~ /\\. {
         deny all;
@@ -46,32 +54,130 @@ server {
 `;
 }
 
-export function renderPlaceholderHtml(domain: string): string {
+interface PageOpts {
+  title: string;
+  eyebrow: string;
+  heading: string;
+  body: string;
+  accent?: string;
+}
+
+function pageHtml({ title, eyebrow, heading, body, accent = "#84cc16" }: PageOpts): string {
+  // Escape any HTML special chars in dynamic strings (defense in depth — these
+  // come from validated domains so should be safe, but we belt-and-suspenders).
+  const esc = (s: string) =>
+    s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  const T = esc(title);
+  const E = esc(eyebrow);
+  const H = esc(heading);
+  const B = esc(body);
   return `<!doctype html>
-<html lang="en">
+<html lang="id">
 <head>
 <meta charset="utf-8" />
-<title>${domain} · provisioned</title>
+<title>${T}</title>
 <meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="robots" content="noindex,nofollow" />
 <style>
-  body { margin: 0; min-height: 100vh; display: grid; place-items: center;
-         font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-         background: #0a0a0a; color: #e4e4e7; }
-  .card { padding: 2rem 2.5rem; border: 1px solid rgba(255,255,255,0.09);
-          border-radius: 0.75rem; background: rgba(20,22,26,0.7); }
-  .eyebrow { color: #84cc16; font-size: 0.65rem; letter-spacing: 0.22em;
-             text-transform: uppercase; }
-  h1 { font-size: 1.5rem; margin: 0.6rem 0 0 0; }
-  p { margin: 0.4rem 0 0 0; color: #71717a; font-size: 0.85rem; }
+  :root { color-scheme: dark; --accent: ${accent}; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; padding: 1.5rem;
+    display: grid; place-items: center;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    background:
+      radial-gradient(130% 100% at 50% -8%, color-mix(in oklch, var(--accent) 12%, transparent) 0%, transparent 46%),
+      #0a0a0a;
+    color: #e4e4e7;
+  }
+  .card {
+    position: relative;
+    width: 100%; max-width: 32rem;
+    padding: 2.25rem 2.5rem 1.5rem;
+    border: 1px solid rgba(255,255,255,0.09);
+    border-radius: 0.75rem;
+    background: rgba(20,22,26,0.7);
+    backdrop-filter: blur(16px) saturate(1.35);
+    -webkit-backdrop-filter: blur(16px) saturate(1.35);
+    box-shadow: 0 24px 60px -30px rgba(0,0,0,0.85);
+  }
+  .card::before, .card::after {
+    content: ""; position: absolute; width: 12px; height: 12px;
+    border-color: color-mix(in oklch, var(--accent) 55%, transparent);
+    pointer-events: none;
+  }
+  .card::before { top: 10px; left: 10px; border-top: 1px solid; border-left: 1px solid; }
+  .card::after  { bottom: 10px; right: 10px; border-bottom: 1px solid; border-right: 1px solid; }
+  .eyebrow {
+    color: color-mix(in oklch, var(--accent) 80%, white 20%);
+    font-size: 0.6rem; letter-spacing: 0.22em; text-transform: uppercase;
+    margin: 0;
+  }
+  .heading {
+    font-size: 1.75rem; font-weight: 700; margin: 0.7rem 0 0 0;
+    color: #fff; line-height: 1.15; letter-spacing: 0.01em; word-break: break-word;
+    text-shadow:
+      0 0 18px color-mix(in oklch, var(--accent) 55%, transparent),
+      0 0 4px color-mix(in oklch, var(--accent) 40%, transparent);
+  }
+  .body { margin: 0.9rem 0 0 0; color: #a1a1aa; font-size: 0.85rem; line-height: 1.55; }
+  .footer {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 1.5rem; padding-top: 0.9rem;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+  .footer span { color: #52525b; font-size: 0.55rem; letter-spacing: 0.22em; text-transform: uppercase; }
 </style>
 </head>
 <body>
   <div class="card">
-    <p class="eyebrow">▸ rinpanel · provisioned</p>
-    <h1>${domain}</h1>
-    <p>vhost is live. upload your site files via the file manager (coming soon).</p>
+    <p class="eyebrow">${E}</p>
+    <h1 class="heading">${H}</h1>
+    <p class="body">${B}</p>
+    <div class="footer">
+      <span>rinpanel</span>
+      <span>console</span>
+    </div>
   </div>
 </body>
 </html>
 `;
+}
+
+export function renderPlaceholderHtml(domain: string): string {
+  return pageHtml({
+    title: `${domain} · siap`,
+    eyebrow: "domain · siap",
+    heading: domain,
+    body: "Domain ini sudah aktif dan siap digunakan. Silakan unggah berkas situs Anda melalui panel kontrol untuk menampilkan konten.",
+  });
+}
+
+export function renderError404Html(): string {
+  return pageHtml({
+    title: "404 · Tidak Ditemukan",
+    eyebrow: "404 · tidak ditemukan",
+    heading: "Halaman tidak ditemukan",
+    body: "Halaman yang Anda cari tidak tersedia. Silakan periksa kembali alamat yang Anda masukkan.",
+  });
+}
+
+export function renderError502Html(): string {
+  return pageHtml({
+    title: "502 · Layanan Tidak Tersedia",
+    eyebrow: "502 · layanan tidak tersedia",
+    heading: "Layanan sedang tidak dapat dijangkau",
+    body: "Server sedang tidak dapat melayani permintaan saat ini. Silakan coba kembali beberapa saat lagi.",
+    accent: "#f59e0b",
+  });
+}
+
+export function renderUnboundHtml(): string {
+  return pageHtml({
+    title: "Domain belum terdaftar",
+    eyebrow: "domain · belum terdaftar",
+    heading: "Domain belum terdaftar",
+    body: "Domain ini belum terdaftar pada sistem. Jika Anda adalah pemilik server, silakan tambahkan domain melalui panel kontrol.",
+    accent: "#a1a1aa",
+  });
 }

@@ -44,7 +44,7 @@ describe("vhost integration (container)", () => {
     expect(r.ok).toBe(true);
     const got = await curlInContainer(TEST);
     expect(got.status).toBe(200);
-    expect(got.body.toUpperCase()).toContain("PROVISIONED");
+    expect(got.body).toContain(TEST);
   }, 30_000);
 
   it("renames a vhost — old name 404s, new name serves", async () => {
@@ -53,7 +53,7 @@ describe("vhost integration (container)", () => {
     expect(r.ok).toBe(true);
     expect((await curlInContainer(TEST_RENAMED)).status).toBe(200);
     const old = await curlInContainer(TEST);
-    expect(old.body.toUpperCase()).not.toContain("PROVISIONED");
+    expect(old.body).not.toContain(TEST);
   }, 30_000);
 
   it("removes a vhost — domain stops serving", async () => {
@@ -61,7 +61,7 @@ describe("vhost integration (container)", () => {
     const r = await removeVhost(TEST_RENAMED, { wipeWebroot: true });
     expect(r.ok).toBe(true);
     const got = await curlInContainer(TEST_RENAMED);
-    expect(got.body.toUpperCase()).not.toContain("PROVISIONED");
+    expect(got.body).not.toContain(TEST_RENAMED);
   }, 30_000);
 });
 

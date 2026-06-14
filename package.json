@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "db:push": "drizzle-kit push",
-    "db:seed": "tsx db/seed.ts"
+    "db:seed": "tsx db/seed.ts",
+    "default-pages:gen": "tsx -e \"import('./lib/nginx/render.ts').then(m => process.stdout.write(m.renderUnboundHtml()))\" > docker/unbound.html"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

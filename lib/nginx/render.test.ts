@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { renderConfig, renderPlaceholderHtml } from "./render";
+import {
+  renderConfig,
+  renderError404Html,
+  renderError502Html,
+  renderPlaceholderHtml,
+  renderUnboundHtml,
+} from "./render";
 
 describe("renderConfig", () => {
   it("renders an nginx server block with the supplied domain", () => {
@@ -41,13 +47,48 @@ describe("renderConfig", () => {
     expect(denyCount).toBeGreaterThanOrEqual(2);
     expect(return404Count).toBeGreaterThanOrEqual(2);
   });
+
+  it("wires custom error pages with an internal location", () => {
+    const c = renderConfig("example.com");
+    expect(c).toContain("error_page 404 /_rinpanel/404.html;");
+    expect(c).toContain("error_page 502 503 504 /_rinpanel/502.html;");
+    expect(c).toMatch(/location \^~ \/_rinpanel\/ \{[^}]*internal;/);
+  });
 });
 
 describe("renderPlaceholderHtml", () => {
-  it("returns html containing the domain", () => {
+  it("returns a PHOSPHOR-styled page containing the domain", () => {
     const h = renderPlaceholderHtml("example.com");
     expect(h.toLowerCase()).toContain("<!doctype html>");
     expect(h).toContain("example.com");
-    expect(h.toUpperCase()).toContain("PROVISIONED");
+    expect(h).toContain("rinpanel");
+    expect(h).toContain("domain");
+  });
+});
+
+describe("renderError404Html", () => {
+  it("returns themed 404 page", () => {
+    const h = renderError404Html();
+    expect(h.toLowerCase()).toContain("<!doctype html>");
+    expect(h).toContain("404");
+    expect(h.toLowerCase()).toContain("tidak ditemukan");
+  });
+});
+
+describe("renderError502Html", () => {
+  it("returns themed 502 page with amber accent", () => {
+    const h = renderError502Html();
+    expect(h.toLowerCase()).toContain("<!doctype html>");
+    expect(h).toContain("502");
+    expect(h.toLowerCase()).toContain("dijangkau");
+    expect(h).toContain("#f59e0b");
+  });
+});
+
+describe("renderUnboundHtml", () => {
+  it("returns themed unbound page", () => {
+    const h = renderUnboundHtml();
+    expect(h.toLowerCase()).toContain("<!doctype html>");
+    expect(h.toLowerCase()).toContain("belum terdaftar");
   });
 });
