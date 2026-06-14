@@ -22,7 +22,7 @@ export function CreateForm() {
         <span className="font-mono text-[0.6rem] tracking-wider text-zinc-600 uppercase">statis</span>
       </div>
 
-      <div className="flex flex-col gap-2 md:flex-row md:items-stretch">
+      <div className="flex flex-col gap-3 md:flex-row md:items-end">
         <label className="flex flex-1 flex-col gap-1.5">
           <span className="eyebrow">nama domain</span>
           <div className="relative">
@@ -49,7 +49,7 @@ export function CreateForm() {
         <button
           type="submit"
           disabled={pending}
-          className="accent-glow mt-2 flex h-11 items-center justify-center gap-2 self-end rounded-md bg-primary px-5 font-mono text-sm font-bold tracking-wide text-primary-foreground uppercase transition disabled:opacity-60 md:mt-[1.45rem]"
+          className="accent-glow flex h-11 shrink-0 items-center justify-center gap-2 rounded-md bg-primary px-5 font-mono text-sm font-bold tracking-wide text-primary-foreground uppercase transition disabled:opacity-60"
         >
           {pending ? (
             <>

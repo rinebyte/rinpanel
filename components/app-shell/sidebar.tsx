@@ -20,7 +20,7 @@ export function Sidebar({ username }: { username: string }) {
   return (
     <aside className="bg-sidebar/80 sticky top-0 flex h-screen w-16 shrink-0 flex-col gap-6 border-r border-white/10 px-2 py-5 backdrop-blur-xl md:w-64 md:px-4">
       <div className="flex items-center gap-3 px-1">
-        <span className="accent-glow grid size-8 place-items-center rounded-md bg-primary font-display text-sm font-bold text-primary-foreground">R</span>
+        <img src="/logo.svg" alt="rinpanel" className="accent-glow size-8 rounded-md" />
         <span className="font-display hidden text-lg font-bold tracking-wide text-white md:block">rinpanel</span>
       </div>
 
@@ -55,18 +55,9 @@ export function Sidebar({ username }: { username: string }) {
 
       {/* USER + LOGOUT footer */}
       <div className="flex flex-col gap-3 border-t border-white/10 pt-4">
-        <div className="flex items-center gap-3 px-1">
-          <span
-            aria-hidden
-            className="grid size-8 shrink-0 place-items-center rounded-md bg-primary/15 ring-1 ring-lime-500/30 font-mono text-xs font-bold uppercase text-lime-300"
-          >
-            {username.slice(0, 1)}
-          </span>
-          <div className="hidden min-w-0 flex-col md:flex">
-            <span className="eyebrow">pengguna</span>
-            <span className="truncate font-mono text-sm text-zinc-200">{username}</span>
-          </div>
-          <span className="ml-auto hidden md:block size-1.5 rounded-full bg-emerald-400 animate-glow-pulse" aria-label="live session" />
+        <div className="hidden min-w-0 flex-col px-1 md:flex">
+          <span className="eyebrow">pengguna</span>
+          <span className="truncate font-mono text-sm text-zinc-200">{username}</span>
         </div>
 
         <button
