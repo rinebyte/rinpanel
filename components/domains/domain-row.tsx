@@ -1,7 +1,8 @@
 "use client";
 
 import { useRef, useState, useActionState, useEffect } from "react";
-import { FileCog, Pencil, Trash, Check, X, Lock, ShieldOff } from "lucide-react";
+import Link from "next/link";
+import { FileCog, FolderOpen, Pencil, Trash, Check, X, Lock, ShieldOff } from "lucide-react";
 import { renameDomain, type ActionResult } from "@/app/(dashboard)/domains/actions";
 import type { Domain } from "@/db/schema";
 import type { SslProvider } from "@/lib/nginx/ssl-detect";
@@ -136,6 +137,13 @@ export function DomainRow({ row, sslEmail, sslDryRun, sslProvider }: Props) {
               <Lock className="size-4" />
             </button>
           )}
+          <Link
+            href={`/files/${row.domain}/public_html`}
+            aria-label="Buka berkas"
+            className="grid size-9 place-items-center rounded-md text-zinc-500 hover:border-lime-500/30 hover:bg-lime-500/10 hover:text-lime-300"
+          >
+            <FolderOpen className="size-4" />
+          </Link>
           <button
             type="button"
             onClick={() => configRef.current?.open()}

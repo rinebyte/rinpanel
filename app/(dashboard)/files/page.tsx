@@ -2,6 +2,7 @@ import { desc } from "drizzle-orm";
 import Link from "next/link";
 import { db } from "@/db";
 import { domains } from "@/db/schema";
+import { DomainPicker } from "@/components/files/domain-picker";
 
 export const dynamic = "force-dynamic";
 
@@ -28,20 +29,7 @@ export default async function FilesPage() {
           </p>
         </div>
       ) : (
-        <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {rows.map((r) => (
-            <li key={r.id}>
-              <Link
-                href={`/files/${r.domain}`}
-                className="glass corner-ticks relative flex flex-col gap-2 rounded-xl p-5 hover:bg-white/[0.02]"
-              >
-                <span className="eyebrow">folder</span>
-                <span className="truncate font-mono text-sm text-white">{r.domain}</span>
-                <span className="truncate font-mono text-[0.7rem] text-zinc-500">▸ {r.rootPath}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <DomainPicker rows={rows.map((r) => ({ id: r.id, domain: r.domain, rootPath: r.rootPath }))} />
       )}
     </div>
   );
