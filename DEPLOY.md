@@ -31,7 +31,8 @@ Pick at §6. Steps 0–5 are identical.
 
 ```bash
 apt update
-apt install -y nginx certbot python3-certbot-nginx git curl ca-certificates
+apt install -y nginx certbot python3-certbot-nginx git curl ca-certificates \
+               build-essential python3
 
 # Node 20+ via NodeSource (Ubuntu's nodejs is too old)
 curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
@@ -42,6 +43,8 @@ npm -v
 ```
 
 > nginx + certbot are installed even in Quick mode — the panel itself doesn't use them in Quick mode, but it MANAGES nginx vhosts + SSL certs for the sites you host (Slices N and S).
+>
+> `build-essential` + `python3` are needed for `better-sqlite3` to build from source. Node 20.x usually doesn't have a prebuilt binary for it, so `npm install` will fall through to `node-gyp` which needs `make` + a C++ compiler. Skip these and `npm install` will fail with `gyp ERR! stack Error: not found: make`.
 
 ---
 
