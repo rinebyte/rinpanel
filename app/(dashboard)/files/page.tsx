@@ -13,18 +13,18 @@ export default async function FilesPage() {
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="eyebrow">module 03 · files</p>
-          <h1 className="font-display mt-1 text-3xl font-bold tracking-wide text-white">webroots</h1>
+          <h1 className="font-display mt-1 text-3xl font-bold tracking-wide text-white">Berkas</h1>
         </div>
         <span className="rounded-full border border-lime-500/30 bg-lime-500/10 px-3 py-1 font-mono text-[0.65rem] tracking-wide uppercase text-lime-300">
-          {rows.length} vhosts
+          {rows.length} domain
         </span>
       </header>
 
       {rows.length === 0 ? (
         <div className="glass corner-ticks relative rounded-xl p-8 text-center">
-          <p className="eyebrow">no domains configured</p>
+          <p className="eyebrow">belum ada domain</p>
           <p className="mt-2 font-mono text-sm text-zinc-500">
-            tambahin di <Link href="/domains" className="text-lime-300 underline">/domains</Link> dulu
+            Silakan tambahkan domain terlebih dahulu melalui menu <Link href="/domains" className="text-lime-300 underline">Domain</Link>.
           </p>
         </div>
       ) : (
@@ -35,7 +35,7 @@ export default async function FilesPage() {
                 href={`/files/${r.domain}`}
                 className="glass corner-ticks relative flex flex-col gap-2 rounded-xl p-5 hover:bg-white/[0.02]"
               >
-                <span className="eyebrow">webroot</span>
+                <span className="eyebrow">folder</span>
                 <span className="truncate font-mono text-sm text-white">{r.domain}</span>
                 <span className="truncate font-mono text-[0.7rem] text-zinc-500">▸ {r.rootPath}</span>
               </Link>

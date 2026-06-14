@@ -18,11 +18,11 @@ export const RenameDialog = forwardRef<RenameDialogHandle, Props>(function Renam
         <input type="hidden" name="domain" value={domain} />
         <input type="hidden" name="path" value={relPath} />
         <div>
-          <p className="eyebrow">entry · rename</p>
-          <h2 className="font-display mt-1 text-xl font-bold tracking-wide text-white">rename</h2>
+          <p className="eyebrow">ganti nama</p>
+          <h2 className="font-display mt-1 text-xl font-bold tracking-wide text-white">Ganti Nama</h2>
         </div>
         <label className="flex flex-col gap-1.5">
-          <span className="eyebrow">new name</span>
+          <span className="eyebrow">nama baru</span>
           <div className="relative">
             <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 font-mono text-sm text-lime-500/50">▸</span>
             <input
@@ -35,16 +35,16 @@ export const RenameDialog = forwardRef<RenameDialogHandle, Props>(function Renam
           </div>
         </label>
         {state && !state.ok && state.error && (
-          <p className="font-mono text-[0.7rem] text-red-300">▸ {state.error}</p>
+          <p className="font-mono text-[0.7rem] text-red-300">Gagal: {state.error}</p>
         )}
         <div className="flex gap-3">
           <button type="button" onClick={() => r.current?.close()}
             className="h-10 flex-1 rounded-md border border-white/10 bg-white/[0.03] font-mono text-xs tracking-wide uppercase text-zinc-300 hover:border-white/20 hover:text-white">
-            Cancel
+            Batal
           </button>
           <button type="submit" disabled={pending}
             className="accent-glow h-10 flex-1 rounded-md bg-primary font-mono text-xs font-semibold tracking-wide uppercase text-primary-foreground disabled:opacity-60">
-            {pending ? "[ ·· ]" : "Rename"}
+            {pending ? "[ ·· ]" : "Ganti"}
           </button>
         </div>
       </form>

@@ -73,7 +73,7 @@ export function DomainRow({ row, sslEmail, sslDryRun, sslProvider }: Props) {
             <button
               type="submit"
               disabled={renamePending}
-              aria-label="Save rename"
+              aria-label="Simpan"
               className="grid size-9 place-items-center rounded-md border border-lime-500/40 bg-lime-500/10 text-lime-300 hover:bg-lime-500/20"
             >
               <Check className="size-4" />
@@ -81,7 +81,7 @@ export function DomainRow({ row, sslEmail, sslDryRun, sslProvider }: Props) {
             <button
               type="button"
               onClick={() => setEditing(false)}
-              aria-label="Cancel rename"
+              aria-label="Batal"
               className="grid size-9 place-items-center rounded-md border border-white/10 bg-white/[0.03] text-zinc-400 hover:text-white"
             >
               <X className="size-4" />
@@ -92,7 +92,7 @@ export function DomainRow({ row, sslEmail, sslDryRun, sslProvider }: Props) {
             <div className="flex items-center gap-2">
               <span className="truncate font-mono text-sm text-white">{row.domain}</span>
               <span className="rounded-sm border border-lime-500/30 bg-lime-500/10 px-1.5 py-0.5 font-mono text-[0.55rem] tracking-wider text-lime-300 uppercase">
-                static
+                statis
               </span>
               {(() => {
                 const chip = sslChip(sslProvider, row.sslEnabled);
@@ -111,7 +111,7 @@ export function DomainRow({ row, sslEmail, sslDryRun, sslProvider }: Props) {
         )}
 
         {renameState && !renameState.ok && renameState.error && editing && (
-          <span className="font-mono text-[0.7rem] text-red-300">▸ {renameState.error}</span>
+          <span className="font-mono text-[0.7rem] text-red-300">Gagal: {renameState.error}</span>
         )}
       </div>
 
@@ -121,7 +121,7 @@ export function DomainRow({ row, sslEmail, sslDryRun, sslProvider }: Props) {
             <button
               type="button"
               onClick={() => disableSslRef.current?.open()}
-              aria-label="Disable SSL"
+              aria-label="Nonaktifkan SSL"
               className="grid size-9 place-items-center rounded-md text-zinc-500 hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-300"
             >
               <ShieldOff className="size-4" />
@@ -130,7 +130,7 @@ export function DomainRow({ row, sslEmail, sslDryRun, sslProvider }: Props) {
             <button
               type="button"
               onClick={() => enableSslRef.current?.open()}
-              aria-label="Enable SSL"
+              aria-label="Aktifkan SSL"
               className="grid size-9 place-items-center rounded-md text-zinc-500 hover:border-lime-500/30 hover:bg-lime-500/10 hover:text-lime-300"
             >
               <Lock className="size-4" />
@@ -139,7 +139,7 @@ export function DomainRow({ row, sslEmail, sslDryRun, sslProvider }: Props) {
           <button
             type="button"
             onClick={() => configRef.current?.open()}
-            aria-label="Edit nginx config"
+            aria-label="Sunting konfigurasi"
             className="grid size-9 place-items-center rounded-md text-zinc-500 hover:border-sky-500/30 hover:bg-sky-500/10 hover:text-sky-300"
           >
             <FileCog className="size-4" />
@@ -147,7 +147,7 @@ export function DomainRow({ row, sslEmail, sslDryRun, sslProvider }: Props) {
           <button
             type="button"
             onClick={() => setEditing(true)}
-            aria-label="Rename domain"
+            aria-label="Ganti nama"
             className="grid size-9 place-items-center rounded-md border border-transparent text-zinc-500 hover:border-white/10 hover:bg-white/[0.04] hover:text-zinc-200"
           >
             <Pencil className="size-4" />
@@ -155,7 +155,7 @@ export function DomainRow({ row, sslEmail, sslDryRun, sslProvider }: Props) {
           <button
             type="button"
             onClick={() => dialogRef.current?.open()}
-            aria-label="Delete domain"
+            aria-label="Hapus"
             className="grid size-9 place-items-center rounded-md border border-transparent text-zinc-500 hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-300"
           >
             <Trash className="size-4" />

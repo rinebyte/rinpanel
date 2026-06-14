@@ -52,20 +52,20 @@ export function UploadZone({ domain, cwd }: { domain: string; cwd: string }) {
         {pending ? (
           <>
             <span className="animate-blink text-lime-300">[ ·· ]</span>
-            <span className="text-zinc-400">uploading</span>
+            <span className="text-zinc-400">mengunggah</span>
           </>
         ) : (
           <>
             <Upload className="size-5 text-lime-500/70" />
-            <span>drop files here</span>
-            <span className="text-[0.7rem] text-zinc-600">or click to choose · 50 MB / file</span>
+            <span>Letakkan berkas di sini</span>
+            <span className="text-[0.7rem] text-zinc-600">atau klik untuk memilih · maksimal 50 MB per berkas</span>
           </>
         )}
       </button>
 
       {result && result.ok && (
         <p className="mt-2 flex items-center gap-2 font-mono text-xs text-emerald-300">
-          <span className="size-1.5 rounded-full bg-emerald-400 animate-glow-pulse" /> upload successful
+          <span className="size-1.5 rounded-full bg-emerald-400 animate-glow-pulse" /> Berkas berhasil diunggah.
         </p>
       )}
       {result && !result.ok && result.error && (

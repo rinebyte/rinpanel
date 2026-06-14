@@ -14,7 +14,7 @@ async function getClientIp(): Promise<string> {
 
 export async function login(_prev: string | undefined, formData: FormData): Promise<string | undefined> {
   const ip = await getClientIp();
-  if (isBlocked(ip)) return "Too many failed attempts. Try again in 10 minutes.";
+  if (isBlocked(ip)) return "Terlalu banyak percobaan gagal. Silakan coba lagi dalam 10 menit.";
 
   try {
     await signIn("credentials", {
@@ -25,7 +25,7 @@ export async function login(_prev: string | undefined, formData: FormData): Prom
   } catch (err) {
     if (err instanceof AuthError) {
       recordFailure(ip);
-      return "Invalid credentials";
+      return "Nama pengguna atau kata sandi tidak sesuai.";
     }
     clearFailures(ip); // NEXT_REDIRECT control-flow signal = success
     throw err;

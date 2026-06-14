@@ -38,7 +38,7 @@ export default async function FileBrowserPage({
         <FileList domain={domain} cwd={relPath} entries={r.value.entries} />
       ) : (
         <div className="rounded-md border border-red-500/30 bg-red-500/10 p-4 font-mono text-sm text-red-300">
-          ▸ {r.error}
+          Gagal memuat berkas: {r.error}
         </div>
       )}
     </div>
