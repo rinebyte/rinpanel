@@ -4,17 +4,36 @@ import { useRef, useState, useActionState, useEffect } from "react";
 import { Pencil, Trash, Check, X, Lock, ShieldOff } from "lucide-react";
 import { renameDomain, type ActionResult } from "@/app/(dashboard)/domains/actions";
 import type { Domain } from "@/db/schema";
+import type { SslProvider } from "@/lib/nginx/ssl-detect";
 import { DeleteDialog, type DeleteDialogHandle } from "./delete-dialog";
 import { EnableSslDialog, type EnableSslDialogHandle } from "./enable-ssl-dialog";
 import { DisableSslDialog, type DisableSslDialogHandle } from "./disable-ssl-dialog";
+
+function sslChip(provider: SslProvider, sslEnabled: boolean) {
+  // Priority: actual DB state (sslEnabled, set by our certbot integration) overrides detection
+  if (sslEnabled) {
+    return { label: "SSL · LE", cls: "border-emerald-500/30 bg-emerald-500/10 text-emerald-300" };
+  }
+  switch (provider) {
+    case "cloudflare":
+      return { label: "SSL · CF", cls: "border-orange-500/30 bg-orange-500/10 text-orange-300" };
+    case "letsencrypt":
+      return { label: "SSL · LE", cls: "border-emerald-500/30 bg-emerald-500/10 text-emerald-300" };
+    case "origin":
+      return { label: "SSL · OTHER", cls: "border-sky-500/30 bg-sky-500/10 text-sky-300" };
+    default:
+      return null;
+  }
+}
 
 interface Props {
   row: Domain;
   sslEmail: string;
   sslDryRun: boolean;
+  sslProvider: SslProvider;
 }
 
-export function DomainRow({ row, sslEmail, sslDryRun }: Props) {
+export function DomainRow({ row, sslEmail, sslDryRun, sslProvider }: Props) {
   const [editing, setEditing] = useState(false);
   const dialogRef = useRef<DeleteDialogHandle>(null);
   const enableSslRef = useRef<EnableSslDialogHandle>(null);
@@ -73,11 +92,15 @@ export function DomainRow({ row, sslEmail, sslDryRun }: Props) {
               <span className="rounded-sm border border-lime-500/30 bg-lime-500/10 px-1.5 py-0.5 font-mono text-[0.55rem] tracking-wider text-lime-300 uppercase">
                 static
               </span>
-              {row.sslEnabled && (
-                <span className="rounded-sm border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 font-mono text-[0.55rem] tracking-wider text-emerald-300 uppercase">
-                  ssl
-                </span>
-              )}
+              {(() => {
+                const chip = sslChip(sslProvider, row.sslEnabled);
+                if (!chip) return null;
+                return (
+                  <span className={`rounded-sm border ${chip.cls} px-1.5 py-0.5 font-mono text-[0.55rem] tracking-wider uppercase`}>
+                    {chip.label}
+                  </span>
+                );
+              })()}
             </div>
             <span className="truncate font-mono text-[0.7rem] text-zinc-500">
               ▸ {row.rootPath}
@@ -131,7 +154,7 @@ export function DomainRow({ row, sslEmail, sslDryRun }: Props) {
       )}
 
       <DeleteDialog ref={dialogRef} id={row.id} domain={row.domain} />
-      <EnableSslDialog ref={enableSslRef} id={row.id} domain={row.domain} email={sslEmail} dryRun={sslDryRun} />
+      <EnableSslDialog ref={enableSslRef} id={row.id} domain={row.domain} email={sslEmail} dryRun={sslDryRun} sslProvider={sslProvider} />
       <DisableSslDialog ref={disableSslRef} id={row.id} domain={row.domain} />
     </li>
   );

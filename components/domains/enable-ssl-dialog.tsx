@@ -2,11 +2,12 @@
 
 import { forwardRef, useImperativeHandle, useRef, useActionState, useState } from "react";
 import { enableDomainSsl, type SslActionResult } from "@/app/(dashboard)/domains/actions";
+import type { SslProvider } from "@/lib/nginx/ssl-detect";
 
 export interface EnableSslDialogHandle { open: () => void; close: () => void }
-interface Props { id: string; domain: string; email?: string; dryRun: boolean }
+interface Props { id: string; domain: string; email?: string; dryRun: boolean; sslProvider?: SslProvider }
 
-export const EnableSslDialog = forwardRef<EnableSslDialogHandle, Props>(function EnableSslDialog({ id, domain, email, dryRun }, ref) {
+export const EnableSslDialog = forwardRef<EnableSslDialogHandle, Props>(function EnableSslDialog({ id, domain, email, dryRun, sslProvider }, ref) {
   const r = useRef<HTMLDialogElement>(null);
   const [phase, setPhase] = useState<"idle" | "running" | "done">("idle");
   const [state, formAction] = useActionState<SslActionResult | undefined, FormData>(
@@ -34,8 +35,17 @@ export const EnableSslDialog = forwardRef<EnableSslDialogHandle, Props>(function
         </div>
 
         <div className="rounded-md border border-amber-500/30 bg-amber-500/10 p-3 font-mono text-xs text-amber-300">
-          ▸ DNS untuk {domain} harus sudah resolve ke server ini.
-          {dryRun && <div className="mt-1 text-amber-200/80">[dev] CERTBOT_DRY_RUN=true — gonna run --dry-run only.</div>}
+          {sslProvider === "cloudflare" ? (
+            <>
+              ▸ Domain ini di belakang Cloudflare. Visitor lo udah dapet HTTPS dari CF edge — install LE origin cert cuma butuh kalau di CF lo set SSL mode = "Full (Strict)".
+              {dryRun && <div className="mt-1 text-amber-200/80">[dev] CERTBOT_DRY_RUN=true — gonna run --dry-run only.</div>}
+            </>
+          ) : (
+            <>
+              ▸ DNS untuk {domain} harus sudah resolve ke server ini.
+              {dryRun && <div className="mt-1 text-amber-200/80">[dev] CERTBOT_DRY_RUN=true — gonna run --dry-run only.</div>}
+            </>
+          )}
         </div>
 
         <pre className="overflow-auto rounded-md border border-white/5 bg-black/40 p-3 font-mono text-[0.7rem] text-lime-200/90">{cmd}</pre>
@@ -65,7 +75,7 @@ export const EnableSslDialog = forwardRef<EnableSslDialogHandle, Props>(function
           {!state && (
             <button type="submit" disabled={phase === "running"}
               className="accent-glow h-10 flex-1 rounded-md bg-primary font-mono text-xs font-semibold tracking-wide uppercase text-primary-foreground disabled:opacity-60">
-              {phase === "running" ? "[ ·· ] issuing cert" : "Enable SSL"}
+              {phase === "running" ? "[ ·· ] issuing cert" : (sslProvider === "cloudflare" ? "Install LE anyway" : "Enable SSL")}
             </button>
           )}
         </div>
